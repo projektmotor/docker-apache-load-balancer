@@ -19,7 +19,7 @@
     ```
 * create Dockerfile
     ```dockerfile
-    FROM php:7.0-cli
+    FROM projektmotor/apache-load-balancer
     VOLUME /path/loadbalancer.conf:/etc/apache2/conf-loadbalancer/loadbalancer.conf
     ```  
 * build image
