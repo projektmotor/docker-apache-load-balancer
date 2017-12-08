@@ -1,0 +1,17 @@
+# #############################################
+# THIS FILE IS AUTO_GENERATED - DO NOT EDIT!
+# #############################################
+
+<IfModule mod_proxy.c>
+
+    ProxyRequests Off
+    ProxyPreserveHost On
+
+    # ... weitere Cluster-Definitionen für andere VHosts ...
+    #<Proxy balancer://[VHOST-CLUSTER-NAME]>
+    #    BalancerMember http://[NODE1-IP]:[NODE1-PORT] route=balancer.web1 loadfactor=45
+    #    BalancerMember http://[NODE2-IP]:[NODE2-PORT] route=balancer.web2 loadfactor=45 status=+H
+    #    ProxySet lbmethod=byrequests stickysession=BALANCE_ID
+    #</Proxy>
+
+</IfModule>
