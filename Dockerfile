@@ -2,17 +2,14 @@ FROM debian:stretch-slim
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y apache2 && \
+    apt-get install -y apache2 python-certbot-apache && \
     apt-get clean
 
 ENV APACHE_RUN_USER www-data
 ENV APACHE_RUN_GROUP www-data
 ENV APACHE_LOG_DIR /var/log/apache2
 
-EXPOSE 80
-
 RUN a2enmod proxy proxy_balancer proxy_http status lbmethod_byrequests
-#RUN a2dissite 000-default
 
 RUN mkdir /var/www/html/balancer-manager
 
@@ -33,6 +30,9 @@ RUN find /etc/apache2/sites-available/ -type f -not -name '000-default.conf' -no
     cp /etc/apache2/conf-available/proxy.conf.dist /etc/apache2/conf-available/proxy.conf
 
 RUN a2enconf proxy proxy-balancer-manager
+
+RUN mkdir /tmp/apache2 && \
+    cp -r /etc/apache2/* /tmp/apache2
 
 COPY docker-entrypoint.sh /usr/local/bin/
 

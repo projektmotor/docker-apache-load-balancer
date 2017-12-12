@@ -32,6 +32,9 @@ init()
     done
 }
 
+cp -r /tmp/apache2/* /etc/apache2
+chown -R root:root /etc/apache2
+
 while read line
 do
     # continue on comments
