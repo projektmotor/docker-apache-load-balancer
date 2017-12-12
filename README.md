@@ -8,7 +8,7 @@
 
 ## How to use
 
-### Container
+### Getting started
 
 * create a local load balancer config file ```/path/loadbalancer.conf```
     ```bash
@@ -17,19 +17,33 @@
     cluster=acme-cluster        # name of load balancer cluster for acme-app
     nodes=[web1:80,web2:80]              # comma separated list of worker nodes (HOST|IP:PORT)
     ```
-* create Dockerfile
-    ```dockerfile
-    FROM projektmotor/apache-load-balancer
-    VOLUME /path/loadbalancer.conf:/etc/apache2/conf-loadbalancer/loadbalancer.conf
-    ```  
 * build image
     ```bash
-    $ docker build -t acme-load-balancer .
+    $ docker build -t acme-load-balancer -v /path/loadbalancer/conf/:/etc/apache2/conf-loadbalancer .
     ```
 * run the image
     ```bash
     $ docker run -it --rm --name acme-load-balancer-container acme-load-balancer
     ```
+
+### Persitence
+
+* use a volume to achieve persistence of your apache config
+    * mount a single path (i.e. vhost path)
+        ```bash
+        $ docker build \
+              -t acme-load-balancer \
+              -v /path/loadbalancer/conf/:/etc/apache2/conf-loadbalancer \
+              -v /path/sites-available/:/etc/apache2/sites-available \
+              .
+        ```
+    * mount a whole apache-config path
+        ```bash
+        $ docker build \
+              -t acme-load-balancer \
+              -v /path/apache2/:/etc/apache2 \
+              .
+        ```
 
 ### Build-In Scripts
 
@@ -39,6 +53,7 @@
     ```
     * HOST-URI: the url your app should be available under 
     * CLUSTER-NAME: a name of load balancer cluster for your app (free choice, but needed for cluster & node conf)
+    * **NOTICE**: apache config has to be reloaded
 
 * create new cluster (```apache-init-cluster.sh```)
     ```bash
@@ -52,4 +67,9 @@
     ```
     * CLUSTER-NAME: the cluster name of your app (set in your vhost & cluster config)
     * NODE: a node config of format URI|IP[:PORT]
+    * **NOTICE**: apache config has to be reloaded
 
+* reload apache config (```apache-reload.sh```)
+    ```bash
+    $ docker exec -it acme-load-balancer-container apache-reload.sh
+    ```
