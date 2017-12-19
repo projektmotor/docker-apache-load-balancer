@@ -32,8 +32,10 @@ init()
     done
 }
 
-cp -r /tmp/apache2/* /etc/apache2
-chown -R root:root /etc/apache2
+rsync -qlru /tmp/apache2/ /etc/apache2/
+rsync -qlru /tmp/letsencrypt/ /etc/letsencrypt/
+
+chown -R root:root /etc/apache2 /etc/letsencrypt
 
 while read line
 do
