@@ -28,7 +28,7 @@ if [ ${VHOST_COUNT} -gt 0 ]; then
     exit
 fi
 
-cp "$APACHE_VHOST_PATH/vhost.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+cp "$APACHE_VHOST_PATH/cluster-vhost.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
 
 sed -i "s/\(ServerName\s*\)\(.*\)/\1$SERVER_NAME/" $APACHE_VHOST_PATH/$VHOST_FILENAME
 sed -i "s/\(balancer:\/\/\)\[\(.*\)\]\//\1$CLUSTER_NAME\//" $APACHE_VHOST_PATH/$VHOST_FILENAME
