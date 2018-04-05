@@ -1,0 +1,24 @@
+<VirtualHost *:443>
+    ServerName [SERVER_NAME]
+
+    ProxyRequests     off
+    ProxyPreserveHost on
+
+    # no proxy for /error/ (Apache HTTPd errors messages)
+    ProxyPass /error/ !
+
+	SSLProxyEngine On
+
+    # VHOST REVERSE PROXY
+    ProxyPass        / http://[TARGET_IP]:[TARGET_PORT]/
+    ProxyPassReverse / http://[TARGET_IP]:[TARGET_PORT]/
+
+    ErrorLog /var/log/apache2/[SERVER_NAME]_ssl_error.log
+    CustomLog ${APACHE_LOG_DIR}/[SERVER_NAME]_ssl_access.log combined
+
+    Include /etc/letsencrypt/options-ssl-apache.conf
+    SSLCertificateFile /etc/letsencrypt/live/[SERVER_NAME]/cert.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/[SERVER_NAME]/privkey.pem
+    SSLCertificateChainFile /etc/letsencrypt/live/[SERVER_NAME]/chain.pem
+
+</VirtualHost>

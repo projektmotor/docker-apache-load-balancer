@@ -1,0 +1,10 @@
+<VirtualHost *:80>
+    ServerName [SERVER_NAME]
+    ServerAlias [SERVER_ALIAS]
+    ServerAdmin admin@[SERVER_NAME]
+
+    Redirect / https:/[SERVER_NAME]/
+
+    ErrorLog ${APACHE_LOG_DIR}/[SERVER_NAME]_error.log
+    CustomLog ${APACHE_LOG_DIR}/[SERVER_NAME]_access.log combined
+</VirtualHost>
