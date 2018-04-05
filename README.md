@@ -47,9 +47,16 @@
 
 ### Build-In Scripts
 
-* add new VHOST (```apache-init-host.sh```)
+* reload apache config (```apache-reload.sh```)
     ```bash
-    $ docker exec -it acme-load-balancer-container apache-init-host.sh HOST-URI CLUSTER-NAME
+    $ docker exec -it acme-load-balancer-container apache-reload.sh
+  ```
+
+#### Loadbalancer Build-In Scripts
+
+* add new VHOST (```apache-init-cluster-vhost```)
+    ```bash
+    $ docker exec -it acme-load-balancer-container apache-init-cluster-vhost.sh HOST-URI CLUSTER-NAME
     ```
     * HOST-URI: the url your app should be available under 
     * CLUSTER-NAME: a name of load balancer cluster for your app (free choice, but needed for cluster & node conf)
@@ -68,8 +75,14 @@
     * CLUSTER-NAME: the cluster name of your app (set in your vhost & cluster config)
     * NODE: a node config of format URI|IP[:PORT]
     * **NOTICE**: apache config has to be reloaded
+    
+    
+#### Reverseproxy Build-In Scripts
 
-* reload apache config (```apache-reload.sh```)
+* add new VHOST (```apache-init-reverseproxy-vhost```)
     ```bash
-    $ docker exec -it acme-load-balancer-container apache-reload.sh
+    $ docker exec -it acme-load-balancer-container apache-init-reverseproxy-vhost.sh
     ```
+    * this is a interactive command, all required parameters (domain, targetip, target port) will be 
+    requested interactively
+    * optional: including SSL certificate creation
