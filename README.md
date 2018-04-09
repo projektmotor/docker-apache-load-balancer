@@ -26,7 +26,7 @@
     $ docker run -it --rm --name acme-load-balancer-container acme-load-balancer
     ```
 
-### Persitence
+### Persistence
 
 * use a volume to achieve persistence of your apache config
     * mount a single path (i.e. vhost path)
