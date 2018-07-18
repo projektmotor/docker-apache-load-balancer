@@ -2,7 +2,7 @@ FROM debian:stretch-slim
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y apache2 rsync && \
+    apt-get install -y apache2 rsync cron && \
     apt-get clean
 
 RUN echo "deb http://ftp.debian.org/debian stretch-backports main" >> /etc/apt/sources.list && \
