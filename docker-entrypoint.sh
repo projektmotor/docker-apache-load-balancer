@@ -8,11 +8,12 @@ BALANCER_MANAGER_PASS=${BALANCER_MANAGER_PASS:-'root'}
 CLUSTER_NAME=""
 VHOST_URI=""
 NODES_CONF=""
+NODE_SSL=""
 
 addNode()
 {
 #    echo "apache-add-cluster-node.sh ${CLUSTER_NAME} $1"
-    apache-add-cluster-node.sh ${CLUSTER_NAME} $1
+    apache-add-cluster-node.sh ${CLUSTER_NAME} $1 ${NODE_SSL}
 }
 
 init()
@@ -49,6 +50,7 @@ do
         CLUSTER_NAME=""
         VHOST_URI=""
         NODES_CONF=""
+        NODE_SSL=""
         continue
     fi
 
@@ -75,12 +77,17 @@ do
         NODES_CONF=${LINE_DATA[1]}
     fi
 
+    if [ "${LINE_DATA[0]}" == "node_ssl" ]; then
+        NODE_SSL=${LINE_DATA[1]}
+    fi
+
     # all config available? init & reset local vars
     if [ -n "${VHOST_URI}" ] && [ -n "${CLUSTER_NAME}" ] && [ -n "${NODES_CONF}" ]; then
         init
         CLUSTER_NAME=""
         VHOST_URI=""
         NODES_CONF=""
+        NODE_SSL=""
     fi
 
 done < ${APACHE_LOADBALANCER_CONF}

@@ -3,6 +3,8 @@
 APACHE_PROXY_CONFIG=/etc/apache2/conf-available/proxy.conf
 CLUSTER_NAME=$1
 NODE=$2
+USE_SSL=$3
+PROTOCOL="http"
 NODE_DATA=(${NODE//:/ })
 NODE_IP=${NODE_DATA[0]}
 NODE_PORT=${NODE_DATA[1]:-80}
@@ -38,7 +40,11 @@ else
     NEW_NODE_STATUS="status=+H"
 fi
 
-NEW_NODE_CONFIG="BalancerMember http:\/\/$NODE_IP:$NODE_PORT route=balancer.web$NEW_NODE_NUMBER loadfactor=45 $NEW_NODE_STATUS"
+if [ -n $USE_SSL ] && [ "$USE_SSL" == "true" ]; then
+    PROTOCOL="https"
+fi
+
+NEW_NODE_CONFIG="BalancerMember $PROTOCOL:\/\/$NODE_IP:$NODE_PORT route=balancer.web$NEW_NODE_NUMBER loadfactor=45 $NEW_NODE_STATUS"
 
 SEARCH="# INSERT $CLUSTER_NAME NODES BEFORE THIS"
 REPLACEMENT="${NEW_NODE_CONFIG}\n        # INSERT $CLUSTER_NAME NODES BEFORE THIS"

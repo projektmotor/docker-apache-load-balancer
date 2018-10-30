@@ -15,7 +15,8 @@
     [acme-app]                  # starts config part (name has no further meaning)
     uri=acme.de                 # the url your app should be available under
     cluster=acme-cluster        # name of load balancer cluster for acme-app
-    nodes=[web1:80,web2:80]              # comma separated list of worker nodes (HOST|IP:PORT)
+    nodes=[web1:443,web2:443]              # comma separated list of worker nodes (HOST|IP:PORT)
+    node_ssl=true              # use ssl-connection for nodes
     ```
 * build image
     ```bash
@@ -74,6 +75,7 @@
     ```
     * CLUSTER-NAME: the cluster name of your app (set in your vhost & cluster config)
     * NODE: a node config of format URI|IP[:PORT]
+    * USE_SSL: use ssl for node-connection (https)
     * **NOTICE**: apache config has to be reloaded
     
     
