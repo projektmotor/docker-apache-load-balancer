@@ -82,7 +82,7 @@ do
     fi
 
     # all config available? init & reset local vars
-    if [ -n "${VHOST_URI}" ] && [ -n "${CLUSTER_NAME}" ] && [ -n "${NODES_CONF}" ]; then
+    if [ -n "${VHOST_URI}" ] && [ -n "${CLUSTER_NAME}" ] && [ -n "${NODES_CONF}" ] && [ -n "${NODE_SSL}" ]; then
         init
         CLUSTER_NAME=""
         VHOST_URI=""
