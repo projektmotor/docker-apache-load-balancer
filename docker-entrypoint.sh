@@ -21,7 +21,7 @@ init()
 #    echo "apache-init-cluster.sh ${CLUSTER_NAME}"
 #    echo "apache-init-cluster-vhost ${VHOST_URI} ${CLUSTER_NAME}"
     apache-init-cluster.sh ${CLUSTER_NAME}
-    apache-init-cluster-vhost.sh ${VHOST_URI} ${CLUSTER_NAME}
+    apache-init-cluster-vhost.sh ${VHOST_URI} ${CLUSTER_NAME} ${NODE_SSL}
 
     NODES_CONF="${NODES_CONF/\[/}"
     NODES_CONF="${NODES_CONF/\]/}"

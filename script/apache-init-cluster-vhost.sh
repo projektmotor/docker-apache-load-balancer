@@ -2,7 +2,7 @@
 
 APACHE_VHOST_PATH=/etc/apache2/sites-available/
 
-usage() { echo "Usage: $0 [-a SERVER_ALIASES] SERVER_NAME CLUSTER_NAME" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-a SERVER_ALIASES] SERVER_NAME CLUSTER_NAME USE_SSL" 1>&2; exit 1; }
 
 while getopts a opt
 do
@@ -14,6 +14,7 @@ done
 
 SERVER_NAME=$1
 CLUSTER_NAME=$2
+USE_SSL=$3
 VHOST_NAME=${SERVER_NAME/\./-}
 VHOST_FILENAME="$VHOST_NAME.conf"
 
@@ -28,7 +29,11 @@ if [ ${VHOST_COUNT} -gt 0 ]; then
     exit
 fi
 
-cp "$APACHE_VHOST_PATH/cluster-vhost.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+if [ -n $USE_SSL ] && [ "$USE_SSL" == "true" ]; then
+    cp "$APACHE_VHOST_PATH/cluster-vhost.ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+else
+    cp "$APACHE_VHOST_PATH/cluster-vhost.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+fi
 
 sed -i "s/\(ServerName\s*\)\(.*\)/\1$SERVER_NAME/" $APACHE_VHOST_PATH/$VHOST_FILENAME
 sed -i "s/\(balancer:\/\/\)\[\(.*\)\]\//\1$CLUSTER_NAME\//" $APACHE_VHOST_PATH/$VHOST_FILENAME

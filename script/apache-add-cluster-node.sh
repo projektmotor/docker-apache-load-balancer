@@ -9,7 +9,7 @@ NODE_DATA=(${NODE//:/ })
 NODE_IP=${NODE_DATA[0]}
 NODE_PORT=${NODE_DATA[1]:-80}
 
-usage() { echo "Usage: $0 CLUSTER_NAME NODE_IP|NODE_URI[:PORT]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 CLUSTER_NAME NODE_IP|NODE_URI[:PORT] USE_SSL" 1>&2; exit 1; }
 
 while getopts a: opt
 do
