@@ -15,6 +15,7 @@ ENV APACHE_RUN_GROUP www-data
 ENV APACHE_LOG_DIR /var/log/apache2
 
 RUN mkdir /var/www/html/balancer-manager
+RUN mkdir /etc/apache2/maintenance-pages
 
 RUN echo 'AuthType Basic'                   > /var/www/html/balancer-manager/.htaccess && \
     echo 'AuthName "Members Only"'          >> /var/www/html/balancer-manager/.htaccess && \
@@ -29,6 +30,7 @@ COPY sites-available/* /etc/apache2/sites-available/
 COPY conf-available/* /etc/apache2/conf-available/
 COPY conf-loadbalancer /etc/apache2/conf-loadbalancer/
 COPY script/* /usr/local/bin/
+COPY maintenance-pages/* /etc/apache2/maintenance-pages/
 
 RUN rm -f /etc/apache2/conf-available/proxy.conf && \
     cp /etc/apache2/conf-available/proxy.conf.dist /etc/apache2/conf-available/proxy.conf

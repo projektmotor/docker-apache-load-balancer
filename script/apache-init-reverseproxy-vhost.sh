@@ -1,6 +1,8 @@
 #!/bin/bash
 
 APACHE_VHOST_PATH=/etc/apache2/sites-available/
+APACHE_MAINTENANCE_PATH=/etc/apache2/maintenance-pages
+APACHE_MAINTENANCE_PATH_ESCAPED=\\/etc\\/apache2\\/maintenance-pages
 CERTBOT_BIN=/usr/bin/certbot
 SSL_ENABLED=0
 SERVER_ALIAS=""
@@ -9,10 +11,14 @@ read -p 'Domain (e.q. acme.com): ' SERVER_NAME
 read -p 'Target IP/DNS: ' TARGET_IP
 read -p 'Target PORT: ' TARGET_PORT
 read -p 'Domain Alias (comma separated, optional): ' SERVER_ALIAS
+read -p 'With maintenance page [y|n]: ' WITH_MAINTENANCE
 read -p 'Enable SSL [y|n]: ' SSL_ENABLED
 
 VHOST_FILENAME="${SERVER_NAME}.conf"
 VHOST_SSL_FILENAME="${SERVER_NAME}.ssl.conf"
+VHOST_SSL_MAINTENANCE_FILENAME="${SERVER_NAME}.ssl.conf_maintenance"
+VHOST_SSL_RUNNING_FILENAME="${SERVER_NAME}.ssl.conf_running"
+HTML_MAINTENANCE_FILENAME="${SERVER_NAME}.maintenance.html"
 
 if [ -z "${SERVER_NAME}" ] || [ -z "${TARGET_IP}" ] || [ -z "${TARGET_PORT}" ]; then
     echo "Please provide at least Domain, IP & Port"
@@ -77,6 +83,12 @@ if [ "${SSL_ENABLED}" = "y" ]; then
     echo "HTTPS-VHost template creation: OK";
 fi
 
+if [ "${WITH_MAINTENANCE}" = "y" ]; then
+    cp "${APACHE_VHOST_PATH}/reverseproxy-vhost.ssl.conf_maintenance.dist" "${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}"
+    cp "${APACHE_MAINTENANCE_PATH}/maintenance.html.dist" "${APACHE_MAINTENANCE_PATH}/${HTML_MAINTENANCE_FILENAME}"
+    echo "HTTPS-VHost maintenance template creation: OK";
+fi
+
 # PERSONALIZE HTTP-VHOST
 sed -i "s/\[SERVER_NAME]/${SERVER_NAME}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
 
@@ -95,6 +107,16 @@ if [ "${SSL_ENABLED}" = "y" ]; then
     sed -i "s/\[TARGET_PORT]/${TARGET_PORT}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
 
     echo "HTTPS-VHost personalization: OK";
+
+    if [ "${WITH_MAINTENANCE}" = "y" ]; then
+        sed -i "s/\[SERVER_NAME]/${SERVER_NAME}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}
+        sed -i "s/\[APACHE_MAINTENANCE_PATH]/${APACHE_MAINTENANCE_PATH_ESCAPED}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}
+        sed -i "s/\[SERVER_NAME]/${SERVER_NAME}/" ${APACHE_MAINTENANCE_PATH}/${HTML_MAINTENANCE_FILENAME}
+
+        echo "HTTPS-VHost maintenance personalization: OK";
+
+        cp ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME} ${APACHE_VHOST_PATH}/${VHOST_SSL_RUNNING_FILENAME}
+    fi
 fi
 
 a2ensite ${VHOST_FILENAME} > /dev/null 2>&1
@@ -102,3 +124,9 @@ a2ensite ${VHOST_SSL_FILENAME} > /dev/null 2>&1
 /etc/init.d/apache2 force-reload > /dev/null 2>&1
 
 echo "vhost '${SERVER_NAME}' initialized & enabled!"
+
+if [ "${WITH_MAINTENANCE}" = "y" ]; then
+    echo "Do not forget to adopt the html of your maintenance page in ${APACHE_MAINTENANCE_PATH}/${HTML_MAINTENANCE_FILENAME}";
+
+    cp ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME} ${APACHE_VHOST_PATH}/${VHOST_SSL_RUNNING_FILENAME}
+fi

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<!-- this is just an example -->
+<head>
+    <meta charset="UTF-8" />
+    <title>[SERVER_NAME]</title>
+</head>
+
+<body>
+    <h1>We are currently down for maintenance...</h1>
+
+    <div>We will be back soon.</div>
+</body>
+</html>

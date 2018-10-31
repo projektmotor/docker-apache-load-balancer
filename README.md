@@ -88,4 +88,5 @@
     * this is a interactive command, all required parameters (domain, target ip, target port) will be 
     requested interactively
     * optional: including SSL certificate creation
+    * optional: use maintenance page
 
