@@ -14,11 +14,26 @@ read -p 'Domain Alias (comma separated, optional): ' SERVER_ALIAS
 read -p 'With maintenance page [y|n]: ' WITH_MAINTENANCE
 read -p 'Enable SSL [y|n]: ' SSL_ENABLED
 
+if [ "${SSL_ENABLED}" = "y" ]; then
+    read -p 'Does intern host use SSL? [y|n]: ' SSL_ENABLED_INTERN
+else
+    SSL_ENABLED_INTERN="n"
+fi
+
 VHOST_FILENAME="${SERVER_NAME}.conf"
 VHOST_SSL_FILENAME="${SERVER_NAME}.ssl.conf"
 VHOST_SSL_MAINTENANCE_FILENAME="${SERVER_NAME}.ssl.conf_maintenance"
 VHOST_SSL_RUNNING_FILENAME="${SERVER_NAME}.ssl.conf_running"
 HTML_MAINTENANCE_FILENAME="${SERVER_NAME}.maintenance.html"
+
+if [ "${SSL_ENABLED_INTERN}" = "y" ]; then
+    VHOST_SSL_TEMPLATE_FILENAME="reverseproxy-vhost.ssl.https.conf.dist"
+elif [ "${SSL_ENABLED_INTERN}" = "n" ]; then
+    VHOST_SSL_TEMPLATE_FILENAME="reverseproxy-vhost.ssl.http.conf.dist"
+else
+    echo "Please provide n or y for 'Does intern host use SSL?'"
+    exit 1
+fi
 
 if [ -z "${SERVER_NAME}" ] || [ -z "${TARGET_IP}" ] || [ -z "${TARGET_PORT}" ]; then
     echo "Please provide at least Domain, IP & Port"
@@ -79,7 +94,7 @@ cp "${APACHE_VHOST_PATH}/reverseproxy-vhost.conf.dist" "${APACHE_VHOST_PATH}/${V
 echo "HTTP-VHost template creation: OK";
 
 if [ "${SSL_ENABLED}" = "y" ]; then
-    cp "${APACHE_VHOST_PATH}/reverseproxy-vhost.ssl.conf.dist" "${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}"
+    cp "${APACHE_VHOST_PATH}/${VHOST_SSL_TEMPLATE_FILENAME}" "${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}"
     echo "HTTPS-VHost template creation: OK";
 fi
 

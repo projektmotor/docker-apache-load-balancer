@@ -7,11 +7,15 @@
     # no proxy for /error/ (Apache HTTPd errors messages)
     ProxyPass /error/ !
 
-	SSLProxyEngine On
+    SSLProxyEngine On
+    SSLProxyVerify none
+    SSLProxyCheckPeerCN off
+    SSLProxyCheckPeerName off
+    SSLProxyCheckPeerExpire off
 
     # VHOST REVERSE PROXY
-    ProxyPass        / http://[TARGET_IP]:[TARGET_PORT]/
-    ProxyPassReverse / http://[TARGET_IP]:[TARGET_PORT]/
+    ProxyPass        / https://[TARGET_IP]:[TARGET_PORT]/
+    ProxyPassReverse / https://[TARGET_IP]:[TARGET_PORT]/
 
     ErrorLog /var/log/apache2/[SERVER_NAME]_ssl_error.log
     CustomLog ${APACHE_LOG_DIR}/[SERVER_NAME]_ssl_access.log combined
