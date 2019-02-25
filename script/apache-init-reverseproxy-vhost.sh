@@ -173,7 +173,7 @@ if [ "${SSL_ENABLED}" = "y" ]; then
     echo "HTTPS-VHost template creation: OK";
 fi
 
-if is_truely ${WITH_MAINTENANCE} then
+if is_truely ${WITH_MAINTENANCE}; then
     cp "${APACHE_VHOST_PATH}/reverseproxy-vhost.ssl.conf_maintenance.dist" "${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}"
     cp "${APACHE_MAINTENANCE_PATH}/maintenance.html.dist" "${APACHE_MAINTENANCE_PATH}/${HTML_MAINTENANCE_FILENAME}"
     echo "HTTPS-VHost maintenance template creation: OK";
