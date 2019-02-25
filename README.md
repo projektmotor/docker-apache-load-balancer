@@ -1,5 +1,7 @@
 # APACHE2 Load Balancer
 
+[![Build Status](https://travis-ci.org/projektmotor/docker-apache-load-balancer.svg?branch=master)](https://travis-ci.org/projektmotor/docker-apache-load-balancer) 
+
 ## Use Cases
 
 * as reverse proxy to serve multiple (docker-) web apps on a single host

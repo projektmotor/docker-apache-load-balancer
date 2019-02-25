@@ -1,0 +1,6 @@
+language: generic
+
+script:
+    - docker build -t acme-load-balancer .
+    - docker run --interactive --detach --tty --rm --name acme-load-balancer-container acme-load-balancer
+    - docker ps | grep --quiet acme-load-balancer
