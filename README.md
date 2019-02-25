@@ -85,8 +85,12 @@
     ```bash
     $ docker exec -it acme-load-balancer-container apache-init-reverseproxy-vhost.sh
     ```
-    * this is a interactive command, all required parameters (domain, target ip, target port) will be 
-    requested interactively
+    * this is an interactive and non-interactive command
+        * all required parameters (domain, target ip, target port) will be 
+          requested interactively
+        * parameters can also be passed
+          ```bash
+          $ docker exec -it acme-load-balancer-container apache-init-reverseproxy-vhost.sh -d acme.de -i 157.138.29.201 -p 9600 -a n -m Y -s Y -l Y
+          ```
     * optional: including SSL certificate creation
     * optional: use maintenance page
-

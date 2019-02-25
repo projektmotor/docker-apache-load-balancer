@@ -1,24 +1,99 @@
 #!/bin/bash
 
+function is_empty() {
+    if [[ "${1}" = "" ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function is_falsly() {
+    if [[ "${1}" = "n" ]] || [[ "${1}" = "N" ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function is_truely() {
+    if [[ "${1}" = "y" ]] || [[ "${1}" = "Y" ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+
 APACHE_VHOST_PATH=/etc/apache2/sites-available/
 APACHE_MAINTENANCE_PATH=/etc/apache2/maintenance-pages
 APACHE_MAINTENANCE_PATH_ESCAPED=\\/etc\\/apache2\\/maintenance-pages
 CERTBOT_BIN=/usr/bin/certbot
-SSL_ENABLED=0
+SSL_ENABLED=""
 SERVER_ALIAS=""
 
-read -p 'Domain (e.q. acme.com): ' SERVER_NAME
-read -p 'Target IP/DNS: ' TARGET_IP
-read -p 'Target PORT: ' TARGET_PORT
-read -p 'Domain Alias (comma separated, optional): ' SERVER_ALIAS
-read -p 'With maintenance page [y|n]: ' WITH_MAINTENANCE
-read -p 'Enable SSL [y|n]: ' SSL_ENABLED
+while getopts d:i:p:a:m:s:l: option
+do
+case "${option}"
+in
+d) SERVER_NAME=${OPTARG};;
+i) TARGET_IP=${OPTARG};;
+p) TARGET_PORT=${OPTARG};;
+a) SERVER_ALIAS=${OPTARG};;
+m) WITH_MAINTENANCE=${OPTARG};;
+s) SSL_ENABLED=${OPTARG};;
+l) SSL_ENABLED_INTERN=${OPTARG};;
+esac
+done
 
-if [ "${SSL_ENABLED}" = "y" ]; then
-    read -p 'Does intern host use SSL? [y|n]: ' SSL_ENABLED_INTERN
+if is_empty ${SERVER_NAME}; then
+    read -p 'Domain (e.q. acme.com; shortcut d): ' SERVER_NAME
+fi
+
+if is_empty ${TARGET_IP}; then
+    read -p 'Target IP/DNS (shortcut i): ' TARGET_IP
+fi
+
+if is_empty ${TARGET_PORT}; then
+    read -p 'Target PORT (shortcut p): ' TARGET_PORT
+fi
+
+if is_empty ${SERVER_ALIAS} && ! is_falsly ${SERVER_ALIAS}; then
+    read -p 'Domain Alias (comma separated, optional; shortcut: a): ' SERVER_ALIAS
+    if is_empty ${SERVER_ALIAS}; then
+        SERVER_ALIAS="n"
+    fi
+fi
+
+if is_empty ${WITH_MAINTENANCE}; then
+    read -p 'With maintenance page (shortcut: m) [Y|n]: ' WITH_MAINTENANCE
+fi
+if is_empty ${WITH_MAINTENANCE}; then
+    WITH_MAINTENANCE="y"
+fi
+
+if is_empty ${SSL_ENABLED}; then
+    read -p 'Enable SSL (shortcut: s) [Y|n]: ' SSL_ENABLED
+fi
+if is_empty ${SSL_ENABLED}; then
+    SSL_ENABLED="Y"
+fi
+
+if is_truely ${SSL_ENABLED}; then
+    if is_empty ${SSL_ENABLED_INTERN}; then
+        read -p 'Does intern host use SSL? (shortcut: l) [Y|n]: ' SSL_ENABLED_INTERN
+    fi
+    if is_empty ${SSL_ENABLED_INTERN}; then
+        SSL_ENABLED_INTERN="y"
+    fi
 else
     SSL_ENABLED_INTERN="n"
 fi
+
+echo ""
+echo "One-liner to rerun this script:"
+echo "apache-init-reverseproxy-vhost.sh -d ${SERVER_NAME} -i ${TARGET_IP} -p ${TARGET_PORT} -a ${SERVER_ALIAS} -m ${WITH_MAINTENANCE} -s ${SSL_ENABLED} -l ${SSL_ENABLED_INTERN}"
+echo ""
 
 VHOST_FILENAME="${SERVER_NAME}.conf"
 VHOST_SSL_FILENAME="${SERVER_NAME}.ssl.conf"
@@ -26,9 +101,9 @@ VHOST_SSL_MAINTENANCE_FILENAME="${SERVER_NAME}.ssl.conf_maintenance"
 VHOST_SSL_RUNNING_FILENAME="${SERVER_NAME}.ssl.conf_running"
 HTML_MAINTENANCE_FILENAME="${SERVER_NAME}.maintenance.html"
 
-if [ "${SSL_ENABLED_INTERN}" = "y" ]; then
+if is_truely ${SSL_ENABLED_INTERN}; then
     VHOST_SSL_TEMPLATE_FILENAME="reverseproxy-vhost.ssl.https.conf.dist"
-elif [ "${SSL_ENABLED_INTERN}" = "n" ]; then
+elif is_falsly ${SSL_ENABLED_INTERN}; then
     VHOST_SSL_TEMPLATE_FILENAME="reverseproxy-vhost.ssl.http.conf.dist"
 else
     echo "Please provide n or y for 'Does intern host use SSL?'"
@@ -51,7 +126,7 @@ fi
 # see: https://certbot.eff.org/docs/using.html#webroot
 # notice: apache plugin requires apache restart, which ends up in container shutdown.
 #         webroot plugin does not execute the restart.
-if [ "${SSL_ENABLED}" = "y" ]; then
+if is_truely ${SSL_ENABLED}; then
     mkdir -p /var/www/certbot-webroot
     cp "${APACHE_VHOST_PATH}/reverseproxy-vhost-ssl-webroot.conf.dist" "${APACHE_VHOST_PATH}/${VHOST_FILENAME}"
 
@@ -98,7 +173,7 @@ if [ "${SSL_ENABLED}" = "y" ]; then
     echo "HTTPS-VHost template creation: OK";
 fi
 
-if [ "${WITH_MAINTENANCE}" = "y" ]; then
+if is_truely ${WITH_MAINTENANCE} then
     cp "${APACHE_VHOST_PATH}/reverseproxy-vhost.ssl.conf_maintenance.dist" "${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}"
     cp "${APACHE_MAINTENANCE_PATH}/maintenance.html.dist" "${APACHE_MAINTENANCE_PATH}/${HTML_MAINTENANCE_FILENAME}"
     echo "HTTPS-VHost maintenance template creation: OK";
@@ -116,14 +191,14 @@ fi
 echo "HTTP-VHost personalization: OK";
 
 # PERSONALIZE HTTPS-VHOST
-if [ "${SSL_ENABLED}" = "y" ]; then
+if is_truely ${SSL_ENABLED}; then
     sed -i "s/\[SERVER_NAME]/${SERVER_NAME}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
     sed -i "s/\[TARGET_IP]/${TARGET_IP}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
     sed -i "s/\[TARGET_PORT]/${TARGET_PORT}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
 
     echo "HTTPS-VHost personalization: OK";
 
-    if [ "${WITH_MAINTENANCE}" = "y" ]; then
+    if is_truely ${WITH_MAINTENANCE}; then
         sed -i "s/\[SERVER_NAME]/${SERVER_NAME}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}
         sed -i "s/\[APACHE_MAINTENANCE_PATH]/${APACHE_MAINTENANCE_PATH_ESCAPED}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}
         sed -i "s/\[SERVER_NAME]/${SERVER_NAME}/" ${APACHE_MAINTENANCE_PATH}/${HTML_MAINTENANCE_FILENAME}
@@ -140,7 +215,7 @@ a2ensite ${VHOST_SSL_FILENAME} > /dev/null 2>&1
 
 echo "vhost '${SERVER_NAME}' initialized & enabled!"
 
-if [ "${WITH_MAINTENANCE}" = "y" ]; then
+if is_truely ${WITH_MAINTENANCE}; then
     echo "Do not forget to adopt the html of your maintenance page in ${APACHE_MAINTENANCE_PATH}/${HTML_MAINTENANCE_FILENAME}";
 
     cp ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME} ${APACHE_VHOST_PATH}/${VHOST_SSL_RUNNING_FILENAME}
