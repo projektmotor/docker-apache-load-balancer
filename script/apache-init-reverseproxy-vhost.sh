@@ -168,7 +168,7 @@ fi
 cp "${APACHE_VHOST_PATH}/reverseproxy-vhost.conf.dist" "${APACHE_VHOST_PATH}/${VHOST_FILENAME}"
 echo "HTTP-VHost template creation: OK";
 
-if [ "${SSL_ENABLED}" = "y" ]; then
+if is_truely ${SSL_ENABLED}; then
     cp "${APACHE_VHOST_PATH}/${VHOST_SSL_TEMPLATE_FILENAME}" "${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}"
     echo "HTTPS-VHost template creation: OK";
 fi
