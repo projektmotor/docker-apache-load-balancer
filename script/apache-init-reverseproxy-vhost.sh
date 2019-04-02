@@ -115,7 +115,7 @@ if [ -z "${SERVER_NAME}" ] || [ -z "${TARGET_IP}" ] || [ -z "${TARGET_PORT}" ]; 
     exit 1
 fi
 
-VHOST_COUNT=`ls -1 ${APACHE_VHOST_PATH} | grep "${VHOST_FILENAME}" | wc -l`
+VHOST_COUNT=`ls -1 ${APACHE_VHOST_PATH} | grep "^${VHOST_FILENAME}" | wc -l`
 
 if [ ${VHOST_COUNT} -gt 0 ]; then
     echo "vhost '${SERVER_NAME}' already exists ... skipping"
