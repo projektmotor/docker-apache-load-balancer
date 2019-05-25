@@ -56,9 +56,12 @@ What else:
 
 #### Prepare Docker Host
 
-To be you own local CA a root-key & root-certificate is needed. These two things should
-be placed on your docker host. Additionally the root-certificate must be added as CA on
-all devices (browsers) which execute requests against your ssl-host(s). 
+Certification warnings suck! To change this (for your self-signed certificate), 
+you should be your own local CA. All you need is a root-key (**myCA.key**) & 
+root-certificate (**myCA.pem**). These two things should be placed on your docker 
+host and mounted to any docker container which uses self-signed certificates. 
+Additionally the root-certificate must be added as CA on all devices (browsers) 
+which execute requests against your ssl-host(s). 
 
 * create you private key:
 ```bash
@@ -81,7 +84,7 @@ Common Name (e.g. server FQDN or YOUR name) []:
 Email Address []:noreply@projektmotor.de
 ```
 
-Congrats, you are your own CA! :] Stop... you are your own CA, but nobody knows about it! :/
+Congrats, now you are your own CA! :] Stop... you are your own CA, but nobody knows about it! :/
 To change this, you should add the earlier generated certificate as CA to your browser.
 
 * Chrome:
@@ -96,7 +99,9 @@ What you should do now, differs from your use case.
 
 ##### Load Balancer which is configured by "loadbalancer.conf"
 
-Dude, this one is truly simple. Just change the ssl-parameter from ```false``` to ```true```
+Dude, this one is a no-brainer. Just set the ssl-parameter in your ```loadbalancer.conf```
+from ```false``` to ```true```. If the VHost-file is already generated, remove it & restart
+the container. A fresh VHost-file is generated, including all the certification stuff. 
 
 ```bash
 [acme-devel]
