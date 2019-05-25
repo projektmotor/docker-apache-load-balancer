@@ -8,6 +8,10 @@
 * as load balancer between multiple worker nodes
 * as a combination of the first two things
 
+What else:
+
+* using as reverse-proxy / load balancer in a development env, including local https with local CA
+
 ## How to use
 
 ### Getting started
@@ -47,6 +51,66 @@
               -v /path/apache2/:/etc/apache2 \
               .
         ```
+
+### Self-Signed SSL with local CA
+
+#### Prepare Docker Host
+
+To be you own local CA a root-key & root-certificate is needed. These two things should
+be placed on your docker host. Additionally the root-certificate must be added as CA on
+all devices (browsers) which execute requests against your ssl-host(s). 
+
+* create you private key:
+```bash
+$ openssl genrsa -out myCA.key 2048
+```
+* create your root-certificate
+```bash
+$ openssl req -x509 -new -nodes -key myCA.key -sha256 -days 1825 -out myCA.pem
+```
+
+At the beginning of the command, the script asks for some certificate informations:
+
+```bash
+Country Name (2 letter code) [AU]:DE
+State or Province Name (full name) [Some-State]:Saxony
+Locality Name (eg, city) []:Leipzig
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:ProjektMOTOR GmbH
+Organizational Unit Name (eg, section) []:
+Common Name (e.g. server FQDN or YOUR name) []:
+Email Address []:noreply@projektmotor.de
+```
+
+Congrats, you are your own CA! :] Stop... you are your own CA, but nobody knows about it! :/
+To change this, you should add the earlier generated certificate as CA to your browser.
+
+* Chrome:
+    * Settings > Manage certificates > Authorities > IMPORT
+    * select you certificate file (myCA.pem)
+    * select signing targets (e.g. websites)
+    * double check the list of authorities if the certificate is imported as new authority
+
+#### Create VHost with certificate signed by the local CA
+
+What you should do now, differs from your use case.
+
+##### Load Balancer which is configured by "loadbalancer.conf"
+
+Dude, this one is truly simple. Just change the ssl-parameter from ```false``` to ```true```
+
+```bash
+[acme-devel]
+uri=acme.devel
+ssl=true                            # ssl for your load balancer vhost
+cluster=acme-devel-cluster
+nodes=[web1:80;web2:80;web3:80]
+node_ssl=true                       # ssl for node-connections 
+```
+
+##### Revers Proxy which is created by the build-in script
+
+Using a self-signed certificate in reverse proxy env is not yet done. There are no 
+impediments, its just a matter of time ;]
 
 ### Build-In Scripts
 

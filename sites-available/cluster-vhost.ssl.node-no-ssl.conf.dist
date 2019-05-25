@@ -1,0 +1,36 @@
+<VirtualHost *:80>
+    ServerName [PRIMARY-DOMAIN-NAME]
+    ServerAlias [DOMAIN-NAME2, DOMAIN-NAME3, ...]
+    DocumentRoot /var/www/html
+    ProxyRequests Off
+
+    # loadbalancing für web-root aktivieren
+    ProxyPass / balancer://[VHOST-CLUSTER-NAME]/ nofailover=On
+
+    # logging der stickysession-daten aktivieren
+    LogFormat "%h %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" \"%{BALANCER_SESSION_STICKY}e\" \"%{BALANCER_SESSION_ROUTE}e\"" balancer
+    CustomLog ${APACHE_LOG_DIR}/access.log balancer
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName [PRIMARY-DOMAIN-NAME]
+    ServerAlias [DOMAIN-NAME2, DOMAIN-NAME3, ...]
+    DocumentRoot /var/www/html
+    ProxyRequests Off
+
+    # loadbalancing für web-root aktivieren
+    ProxyPass / balancer://[VHOST-CLUSTER-NAME]/ nofailover=On
+
+    <IfModule mod_ssl.c>
+        SSLEngine on
+        SSLCertificateKeyFile /etc/ssl/keys/[PRIMARY-DOMAIN-NAME].key
+        SSLCertificateFile /etc/ssl/certs/[PRIMARY-DOMAIN-NAME].crt
+        SetEnvIf User-Agent ".*MSIE.*" \
+          nokeepalive ssl-unclean-shutdown \
+          downgrade-1.0 force-response-1.0
+    </IfModule>
+
+    # logging der stickysession-daten aktivieren
+    LogFormat "%h %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" \"%{BALANCER_SESSION_STICKY}e\" \"%{BALANCER_SESSION_ROUTE}e\"" balancer
+    CustomLog ${APACHE_LOG_DIR}/access.log balancer
+</VirtualHost>

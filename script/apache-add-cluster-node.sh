@@ -42,6 +42,7 @@ fi
 
 if [ -n $USE_SSL ] && [ "$USE_SSL" == "true" ]; then
     PROTOCOL="https"
+    NODE_PORT=443
 fi
 
 NEW_NODE_CONFIG="BalancerMember $PROTOCOL:\/\/$NODE_IP:$NODE_PORT route=balancer.web$NEW_NODE_NUMBER loadfactor=45 $NEW_NODE_STATUS"
