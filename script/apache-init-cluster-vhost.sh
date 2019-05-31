@@ -89,7 +89,7 @@ if [ -n $SERVER_SSL ] && [ "$SERVER_SSL" == "true" ]; then
     if [ -n $NODE_SSL ] && [ "$NODE_SSL" == "true" ]; then
         cp "$APACHE_VHOST_PATH/cluster-vhost.ssl.node-ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
     else
-        cp "$APACHE_VHOST_PATH/cluster-vhost.ssl.node-no-ssl.conf" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+        cp "$APACHE_VHOST_PATH/cluster-vhost.ssl.node-no-ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
     fi
 
     sed -i "s/SSLCertificateKeyFile.*/SSLCertificateKeyFile \/etc\/ssl_ca\/keys\/${SERVER_NAME}.key/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
@@ -98,7 +98,7 @@ else
     if [ -n $NODE_SSL ] && [ "$NODE_SSL" == "true" ]; then
         cp "$APACHE_VHOST_PATH/cluster-vhost.no-ssl.node-ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
     else
-        cp "$APACHE_VHOST_PATH/cluster-vhost.no-ssl.node-no-ssl.conf" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+        cp "$APACHE_VHOST_PATH/cluster-vhost.no-ssl.node-no-ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
     fi
 fi
 
