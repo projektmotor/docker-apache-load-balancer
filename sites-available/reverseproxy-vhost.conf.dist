@@ -3,6 +3,8 @@
     ServerAlias [SERVER_ALIAS]
     ServerAdmin admin@[SERVER_NAME]
 
+    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+
     Redirect / https://[SERVER_NAME]/
 
     ErrorLog ${APACHE_LOG_DIR}/[SERVER_NAME]_error.log

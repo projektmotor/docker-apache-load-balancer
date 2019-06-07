@@ -1,6 +1,8 @@
 <VirtualHost *:443>
     ServerName [SERVER_NAME]
 
+    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+
     ProxyRequests     off
     ProxyPreserveHost on
 

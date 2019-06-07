@@ -4,12 +4,15 @@
     DocumentRoot /var/www/html
     ProxyRequests Off
 
+    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+
     # loadbalancing für web-root aktivieren
     ProxyPass / balancer://[VHOST-CLUSTER-NAME]/ nofailover=On
 
     # logging der stickysession-daten aktivieren
     LogFormat "%h %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" \"%{BALANCER_SESSION_STICKY}e\" \"%{BALANCER_SESSION_ROUTE}e\"" balancer
     CustomLog ${APACHE_LOG_DIR}/access.log balancer
+    ErrorLog ${APACHE_LOG_DIR}/error.log
 </VirtualHost>
 
 <VirtualHost *:443>
@@ -17,6 +20,8 @@
     ServerAlias [DOMAIN-NAME2, DOMAIN-NAME3, ...]
     DocumentRoot /var/www/html
     ProxyRequests Off
+
+    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
 
     # loadbalancing für web-root aktivieren
     ProxyPass / balancer://[VHOST-CLUSTER-NAME]/ nofailover=On
@@ -33,4 +38,5 @@
     # logging der stickysession-daten aktivieren
     LogFormat "%h %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" \"%{BALANCER_SESSION_STICKY}e\" \"%{BALANCER_SESSION_ROUTE}e\"" balancer
     CustomLog ${APACHE_LOG_DIR}/access.log balancer
+    ErrorLog ${APACHE_LOG_DIR}/error.log
 </VirtualHost>
