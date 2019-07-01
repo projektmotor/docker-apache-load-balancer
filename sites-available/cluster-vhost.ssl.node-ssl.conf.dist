@@ -4,7 +4,14 @@
     DocumentRoot /var/www/html
     ProxyRequests Off
 
-    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+#    <If "${APACHE_BEHIND_REVERSE_PROXY} == 'true'">
+#        RemoteIPHeader X-Real-Client-IP
+#        LogFormat "%a %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" abc" balancer
+#    </If>
+#    <Else>
+#        RequestHeader set X-Real-Client-IP expr=%{REMOTE_ADDR}
+#        LogFormat "%h %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" abe" balancer
+#    </Else>
 
     SSLProxyEngine on
     SSLProxyVerify none
@@ -16,7 +23,6 @@
     ProxyPass / balancer://[VHOST-CLUSTER-NAME]/ nofailover=On
 
     # logging der stickysession-daten aktivieren
-    LogFormat "%h %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" \"%{BALANCER_SESSION_STICKY}e\" \"%{BALANCER_SESSION_ROUTE}e\"" balancer
     CustomLog ${APACHE_LOG_DIR}/access.log balancer
     ErrorLog ${APACHE_LOG_DIR}/error.log
 </VirtualHost>
@@ -27,7 +33,14 @@
     DocumentRoot /var/www/html
     ProxyRequests Off
 
-    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+#    <If "${APACHE_BEHIND_REVERSE_PROXY} == 'true'">
+#        RemoteIPHeader X-Real-Client-IP
+#        LogFormat "%a %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" abc" balancer
+#    </If>
+#    <Else>
+#        RequestHeader set X-Real-Client-IP expr=%{REMOTE_ADDR}
+#        LogFormat "%h %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" abe" balancer
+#    </Else>
 
     SSLProxyEngine on
     SSLProxyVerify none
@@ -48,7 +61,6 @@
     </IfModule>
 
     # logging der stickysession-daten aktivieren
-    LogFormat "%h %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%{BALANCE_ID}C\" \"%{BALANCER_SESSION_STICKY}e\" \"%{BALANCER_SESSION_ROUTE}e\"" balancer
     CustomLog ${APACHE_LOG_DIR}/access.log balancer
     ErrorLog ${APACHE_LOG_DIR}/error.log
 </VirtualHost>

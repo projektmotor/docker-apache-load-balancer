@@ -35,11 +35,14 @@ COPY maintenance-pages/* /etc/apache2/maintenance-pages/
 RUN rm -f /etc/apache2/conf-available/proxy.conf && \
     cp /etc/apache2/conf-available/proxy.conf.dist /etc/apache2/conf-available/proxy.conf
 
-RUN a2enmod proxy proxy_balancer proxy_http status lbmethod_byrequests rewrite headers ssl && \
+RUN a2enmod proxy proxy_balancer proxy_http status lbmethod_byrequests rewrite headers remoteip ssl && \
     a2enconf proxy proxy-balancer-manager
 
 RUN cp -r /etc/apache2 /tmp/apache2 && \
     cp -r /etc/letsencrypt /tmp/letsencrypt
+
+ENV TIME_ZONE=Europe/Berlin
+RUN ln -snf /usr/share/zoneinfo/${TIME_ZONE} /etc/localtime && echo ${TIME_ZONE} > /etc/timezone
 
 COPY docker-entrypoint.sh /usr/local/bin/
 
