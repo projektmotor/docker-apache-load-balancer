@@ -7,6 +7,7 @@ VHOST_URI=""
 VHOST_SSL=""
 NODES_CONF=""
 NODE_SSL=""
+PROXY_ADDRESS=""
 
 addNode()
 {
@@ -16,10 +17,13 @@ addNode()
 
 init()
 {
-#    echo "apache-init-cluster.sh ${CLUSTER_NAME}"
-#    echo "apache-init-cluster-vhost ${VHOST_URI} ${CLUSTER_NAME}"
     apache-init-cluster.sh ${CLUSTER_NAME}
-    apache-init-cluster-vhost.sh ${VHOST_URI} ${VHOST_SSL} ${CLUSTER_NAME} ${NODE_SSL}
+
+    if [ -n "${PROXY_ADDRESS}" ]; then
+        apache-init-cluster-vhost.sh -p ${PROXY_ADDRESS} ${VHOST_URI} ${VHOST_SSL} ${CLUSTER_NAME} ${NODE_SSL}
+    else
+        apache-init-cluster-vhost.sh ${VHOST_URI} ${VHOST_SSL} ${CLUSTER_NAME} ${NODE_SSL}
+    fi
 
     NODES_CONF="${NODES_CONF/\[/}"
     NODES_CONF="${NODES_CONF/\]/}"
@@ -45,6 +49,7 @@ do
         VHOST_SSL=""
         NODES_CONF=""
         NODE_SSL=""
+        PROXY_ADDRESS=""
         continue
     fi
 
@@ -80,6 +85,11 @@ do
         NODE_SSL=${LINE_DATA[1]}
     fi
 
+    if [ "${LINE_DATA[0]}" == "reverse_proxy_address" ]; then
+        PROXY_ADDRESS=${LINE_DATA[1]}
+    fi
+
+
     # all config available? init & reset local vars
     if [ -n "${VHOST_URI}" ] && [ -n "${VHOST_SSL}" ] && [ -n "${CLUSTER_NAME}" ] && [ -n "${NODES_CONF}" ] && [ -n "${NODE_SSL}" ]; then
         init
@@ -88,6 +98,7 @@ do
         VHOST_SSL=""
         NODES_CONF=""
         NODE_SSL=""
+        PROXY_ADDRESS=""
     fi
 
 done < ${APACHE_LOADBALANCER_CONF}

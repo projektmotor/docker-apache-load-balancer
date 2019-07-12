@@ -2,12 +2,13 @@
 
 APACHE_VHOST_PATH=/etc/apache2/sites-available/
 
-usage() { echo "Usage: $0 [-a SERVER_ALIASES] SERVER_NAME CLUSTER_NAME USE_SSL" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-a SERVER_ALIASES] [-p REVERSE_PROXY_ADDRESS] SERVER_NAME SERVER_SSL CLUSTER_NAME USE_SSL" 1>&2; exit 1; }
 
 while getopts a opt
 do
    case $opt in
        a) SERVER_ALIAS=${OPTARG};;
+       p) REVERSE_PROXY_ADDRESS=${OPTARG};;
        *) usage ;;
    esac
 done
@@ -87,18 +88,18 @@ if [ -n $SERVER_SSL ] && [ "$SERVER_SSL" == "true" ]; then
     rm -rf ${CERTIFICATION_BASE_PATH}/*
 
     if [ -n $NODE_SSL ] && [ "$NODE_SSL" == "true" ]; then
-        cp "$APACHE_VHOST_PATH/cluster-vhost.ssl.node-ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+        cp "$APACHE_VHOST_PATH/cluster-vhost.incoming_https.outgoing_https.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
     else
-        cp "$APACHE_VHOST_PATH/cluster-vhost.ssl.node-no-ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+        cp "$APACHE_VHOST_PATH/cluster-vhost.incoming_https.outgoing_http.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
     fi
 
     sed -i "s/SSLCertificateKeyFile.*/SSLCertificateKeyFile \/etc\/ssl_ca\/keys\/${SERVER_NAME}.key/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
     sed -i "s/SSLCertificateFile.*/SSLCertificateFile \/etc\/ssl_ca\/certs\/${SERVER_NAME}.crt/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
 else
     if [ -n $NODE_SSL ] && [ "$NODE_SSL" == "true" ]; then
-        cp "$APACHE_VHOST_PATH/cluster-vhost.no-ssl.node-ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+        cp "$APACHE_VHOST_PATH/cluster-vhost.incoming_http.outgoing_https.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
     else
-        cp "$APACHE_VHOST_PATH/cluster-vhost.no-ssl.node-no-ssl.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
+        cp "$APACHE_VHOST_PATH/cluster-vhost.incoming_http.outgoing_http.conf.dist" "$APACHE_VHOST_PATH/$VHOST_FILENAME"
     fi
 fi
 
@@ -109,6 +110,15 @@ if [ -z "${SERVER_ALIAS}" ]; then
     sed -i '/ServerAlias/d' $APACHE_VHOST_PATH/$VHOST_FILENAME
 else
     sed -i "s/\(ServerAlias\s*\)\(.*\)/\1$SERVER_ALIAS /" $APACHE_VHOST_PATH/$VHOST_FILENAME
+fi
+
+if [ ! -z "${REVERSE_PROXY_ADDRESS}" ]; then
+    INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
+    INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
+
+    # update http config
+    sed -i -E "s/(RequestHeader setifempty X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+    sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
 fi
 
 a2ensite ${VHOST_FILENAME} # 2>&1 > /dev/null
