@@ -15,8 +15,10 @@
     RewriteCond %{REQUEST_FILENAME} !/[SERVER_NAME].maintenance.html
     RewriteRule ^.*$    /[SERVER_NAME].maintenance.html [L]
 
+    LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%D\" \"%{X-Route}o\"" pm-apache
+
     ErrorLog /var/log/apache2/[SERVER_NAME]_ssl_error.log
-    CustomLog ${APACHE_LOG_DIR}/[SERVER_NAME]_ssl_access.log combined
+    CustomLog ${APACHE_LOG_DIR}/[SERVER_NAME]_ssl_access.log pm-apache
 
     Include /etc/letsencrypt/options-ssl-apache.conf
     SSLCertificateFile /etc/letsencrypt/live/[SERVER_NAME]/cert.pem

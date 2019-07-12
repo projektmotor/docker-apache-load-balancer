@@ -26,13 +26,15 @@ function is_truely() {
 
 
 APACHE_VHOST_PATH=/etc/apache2/sites-available/
+APACHE_VHOST_TEMPLATE_PATH=/etc/apache2/sites-template/
 APACHE_MAINTENANCE_PATH=/etc/apache2/maintenance-pages
 APACHE_MAINTENANCE_PATH_ESCAPED=\\/etc\\/apache2\\/maintenance-pages
 CERTBOT_BIN=/usr/bin/certbot
 SSL_ENABLED=""
 SERVER_ALIAS=""
+REVERSE_PROXY_ADDRESS=""
 
-while getopts d:i:p:a:m:s:l: option
+while getopts d:i:p:a:m:s:l:p: option
 do
 case "${option}"
 in
@@ -43,6 +45,7 @@ a) SERVER_ALIAS=${OPTARG};;
 m) WITH_MAINTENANCE=${OPTARG};;
 s) SSL_ENABLED=${OPTARG};;
 l) SSL_ENABLED_INTERN=${OPTARG};;
+p) REVERSE_PROXY_ADDRESS=${OPTARG};;
 esac
 done
 
@@ -90,21 +93,26 @@ else
     SSL_ENABLED_INTERN="n"
 fi
 
+if is_empty ${REVERSE_PROXY_ADDRESS}; then
+    read -p 'Behind another Reverse-Proxy or Load-Balancer? IP/DNS (shortcut: p): ' REVERSE_PROXY_ADDRESS
+fi
+
 echo ""
 echo "One-liner to rerun this script:"
 echo "apache-init-reverseproxy-vhost.sh -d ${SERVER_NAME} -i ${TARGET_IP} -p ${TARGET_PORT} -a ${SERVER_ALIAS} -m ${WITH_MAINTENANCE} -s ${SSL_ENABLED} -l ${SSL_ENABLED_INTERN}"
 echo ""
 
 VHOST_FILENAME="${SERVER_NAME}.conf"
+VHOST_MAINTENANCE_FILENAME="${SERVER_NAME}.conf_maintenance"
 VHOST_SSL_FILENAME="${SERVER_NAME}.ssl.conf"
 VHOST_SSL_MAINTENANCE_FILENAME="${SERVER_NAME}.ssl.conf_maintenance"
 VHOST_SSL_RUNNING_FILENAME="${SERVER_NAME}.ssl.conf_running"
 HTML_MAINTENANCE_FILENAME="${SERVER_NAME}.maintenance.html"
 
 if is_truely ${SSL_ENABLED_INTERN}; then
-    VHOST_SSL_TEMPLATE_FILENAME="reverseproxy-vhost.ssl.https.conf.dist"
+    VHOST_SSL_TEMPLATE_FILENAME="reverseproxy-vhost.incoming_https.outgoing_https.conf.dist"
 elif is_falsly ${SSL_ENABLED_INTERN}; then
-    VHOST_SSL_TEMPLATE_FILENAME="reverseproxy-vhost.ssl.http.conf.dist"
+    VHOST_SSL_TEMPLATE_FILENAME="reverseproxy-vhost.incoming_https.outgoing_http.conf.dist"
 else
     echo "Please provide n or y for 'Does intern host use SSL?'"
     exit 1
@@ -128,7 +136,7 @@ fi
 #         webroot plugin does not execute the restart.
 if is_truely ${SSL_ENABLED}; then
     mkdir -p /var/www/certbot-webroot
-    cp "${APACHE_VHOST_PATH}/reverseproxy-vhost-ssl-webroot.conf.dist" "${APACHE_VHOST_PATH}/${VHOST_FILENAME}"
+    cp "${APACHE_VHOST_TEMPLATE_PATH}/reverseproxy-vhost-ssl-webroot.conf.dist" "${APACHE_VHOST_PATH}/${VHOST_FILENAME}"
 
     # PERSONALIZE HTTP-VHOST
     sed -i "s/\[SERVER_NAME]/${SERVER_NAME}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
@@ -165,16 +173,22 @@ if is_truely ${SSL_ENABLED}; then
 fi
 
 # COPY VHOST TEMPLATES
-cp "${APACHE_VHOST_PATH}/reverseproxy-vhost.conf.dist" "${APACHE_VHOST_PATH}/${VHOST_FILENAME}"
-echo "HTTP-VHost template creation: OK";
-
 if is_truely ${SSL_ENABLED}; then
-    cp "${APACHE_VHOST_PATH}/${VHOST_SSL_TEMPLATE_FILENAME}" "${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}"
+    cp "${APACHE_VHOST_TEMPLATE_PATH}/${VHOST_SSL_TEMPLATE_FILENAME}" "${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}"
+    cp "${APACHE_VHOST_TEMPLATE_PATH}/reverseproxy-vhost.incoming_https.redirect_http.conf.dist" "${APACHE_VHOST_PATH}/${VHOST_FILENAME}"
     echo "HTTPS-VHost template creation: OK";
+else
+    cp "${APACHE_VHOST_TEMPLATE_PATH}/reverseproxy-vhost.incoming_http.outgoing_http.conf.dist" "${APACHE_VHOST_PATH}/${VHOST_FILENAME}"
+    echo "HTTP-VHost template creation: OK";
 fi
 
 if is_truely ${WITH_MAINTENANCE}; then
-    cp "${APACHE_VHOST_PATH}/reverseproxy-vhost.ssl.conf_maintenance.dist" "${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}"
+    if is_truely ${SSL_ENABLED}; then
+        cp "${APACHE_VHOST_TEMPLATE_PATH}/reverseproxy-vhost.incoming_https.conf_maintenance.dist" "${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}"
+    else
+        cp "${APACHE_VHOST_TEMPLATE_PATH}/reverseproxy-vhost.incoming_http.conf_maintenance.dist" "${APACHE_VHOST_PATH}/${VHOST_MAINTENANCE_FILENAME}"
+    fi
+
     cp "${APACHE_MAINTENANCE_PATH}/maintenance.html.dist" "${APACHE_MAINTENANCE_PATH}/${HTML_MAINTENANCE_FILENAME}"
     echo "HTTPS-VHost maintenance template creation: OK";
 fi
@@ -207,6 +221,34 @@ if is_truely ${SSL_ENABLED}; then
 
         cp ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME} ${APACHE_VHOST_PATH}/${VHOST_SSL_RUNNING_FILENAME}
     fi
+fi
+
+# add extra config if behind another reverse proxy / load balancer
+if ! is_empty ${REVERSE_PROXY_ADDRESS}; then
+    INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
+    INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
+
+    # update http config
+    sed -i -E "s/(RequestHeader setifempty X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+    sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+
+    # update https config (if incoming ssl enabled)
+    if is_truely ${SSL_ENABLED}; then
+        sed -i -E "s/(RequestHeader setifempty X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
+        sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
+    fi
+
+    # update maintainence config
+    if is_truely ${WITH_MAINTENANCE}; then
+        if is_truely ${SSL_ENABLED}; then
+            sed -i -E "s/(DocumentRoot.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}
+            sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}
+        else
+            sed -i -E "s/(DocumentRoot.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_MAINTENANCE_FILENAME}
+            sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_MAINTENANCE_FILENAME}
+        fi
+    fi
+
 fi
 
 a2ensite ${VHOST_FILENAME} > /dev/null 2>&1

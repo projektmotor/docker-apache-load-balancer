@@ -1,0 +1,23 @@
+<VirtualHost *:80>
+    ServerName [SERVER_NAME]
+
+    DocumentRoot [APACHE_MAINTENANCE_PATH]
+
+    <Directory [APACHE_MAINTENANCE_PATH]>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride all
+        Require all granted
+    </Directory>
+
+    RewriteEngine on
+
+    RewriteCond %{DOCUMENT_ROOT}/[SERVER_NAME].maintenance.html -f
+    RewriteCond %{REQUEST_FILENAME} !/[SERVER_NAME].maintenance.html
+    RewriteRule ^.*$    /[SERVER_NAME].maintenance.html [L]
+
+    LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%D\" \"%{X-Route}o\"" pm-apache
+
+    ErrorLog /var/log/apache2/[SERVER_NAME]_ssl_error.log
+    CustomLog ${APACHE_LOG_DIR}/[SERVER_NAME]_ssl_access.log pm-apache
+
+</VirtualHost>

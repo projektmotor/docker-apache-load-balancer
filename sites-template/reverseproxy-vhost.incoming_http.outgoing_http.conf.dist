@@ -1,0 +1,22 @@
+<VirtualHost *:80>
+    ServerName [SERVER_NAME]
+
+    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+
+    ProxyRequests     off
+    ProxyPreserveHost on
+
+    # no proxy for /error/ (Apache HTTPd errors messages)
+    ProxyPass /error/ !
+
+    SSLProxyEngine On
+
+    # VHOST REVERSE PROXY
+    ProxyPass        / http://[TARGET_IP]:[TARGET_PORT]/
+    ProxyPassReverse / http://[TARGET_IP]:[TARGET_PORT]/
+
+    LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\" \"%D\" \"%{X-Route}o\"" pm-apache
+
+    ErrorLog /var/log/apache2/[SERVER_NAME]_ssl_error.log
+    CustomLog ${APACHE_LOG_DIR}/[SERVER_NAME]_ssl_access.log pm-apache
+</VirtualHost>
