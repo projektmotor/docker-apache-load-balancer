@@ -2,13 +2,19 @@ FROM debian:stretch-slim
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y apache2 rsync cron ssl-cert-check curl && \
+    apt-get install -y apache2 rsync cron ssl-cert-check curl unzip && \
     apt-get clean
 
 RUN echo "deb http://ftp.debian.org/debian stretch-backports main" >> /etc/apt/sources.list && \
     apt-get update && \
     apt-get install -y python-certbot-apache -t stretch-backports && \
     apt-get clean
+
+RUN cd /tmp && \
+    curl -LJO https://github.com/certbot/certbot/archive/v0.36.0.zip && \
+    unzip -q certbot-0.36.0.zip && \
+    cp /tmp/certbot-0.36.0/certbot-apache/certbot_apache/options-ssl-apache.conf /etc/letsencrypt/options-ssl-apache.conf && \
+    rm -rf /tmp/certbot-0.36.0
 
 ENV APACHE_RUN_USER www-data
 ENV APACHE_RUN_GROUP www-data
@@ -27,6 +33,7 @@ RUN echo 'AuthType Basic'                   > /var/www/html/balancer-manager/.ht
 RUN rm -rf /etc/apache2/sites-available/*
 
 COPY sites-available/* /etc/apache2/sites-available/
+COPY sites-template/* /etc/apache2/sites-template/
 COPY conf-available/* /etc/apache2/conf-available/
 COPY conf-loadbalancer /etc/apache2/conf-loadbalancer/
 COPY script/* /usr/local/bin/

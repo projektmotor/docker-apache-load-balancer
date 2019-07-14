@@ -40,11 +40,10 @@
 
     <IfModule mod_ssl.c>
         SSLEngine on
-        SSLCertificateKeyFile /etc/ssl/keys/[PRIMARY-DOMAIN-NAME].key
-        SSLCertificateFile /etc/ssl/certs/[PRIMARY-DOMAIN-NAME].crt
-        SetEnvIf User-Agent ".*MSIE.*" \
-          nokeepalive ssl-unclean-shutdown \
-          downgrade-1.0 force-response-1.0
+        Include /etc/letsencrypt/options-ssl-apache.conf
+        SSLCertificateFile /etc/letsencrypt/live/[SERVER_NAME]/cert.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/[SERVER_NAME]/privkey.pem
+        SSLCertificateChainFile /etc/letsencrypt/live/[SERVER_NAME]/chain.pem
     </IfModule>
 
     # logging der stickysession-daten aktivieren
