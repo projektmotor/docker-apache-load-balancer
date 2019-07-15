@@ -12,11 +12,9 @@ What else:
 
 * using as reverse-proxy / load balancer in a development env, including local https with local CA
 
-## How to use
+## General
 
-### General
-
-#### Self-Signed Certificates with local CA
+### Self-Signed Certificates with local CA
 
 Certification warnings suck! To change this (for your self-signed certificate), 
 you should be your own local CA. All you need is a root-key (**myCA.key**) & 
@@ -55,7 +53,7 @@ To change this, you should add the earlier generated certificate as CA to your b
  * select signing targets (e.g. websites)
  * double check the list of authorities if the certificate is imported as new authority
 
-#### Persistence
+### Persistence
 
 * mount a single path (i.e. vhost path)
     ```bash
@@ -73,7 +71,7 @@ To change this, you should add the earlier generated certificate as CA to your b
           projektmotor/apache-load-balancer:latest
     ```
 
-#### Logging
+### Logging
 
 In general it is a good idea to mount a host-folder to ```/var/log/apache2```. This makes your apache log-files persistent
 and log debugging from the outside of the docker container quite easy. 
@@ -85,7 +83,7 @@ $ docker run -it --rm \
       projektmotor/apache-load-balancer:latest
 ```
 
-### Load Balancer Mode
+## Load Balancer Mode
 
 * create a local load balancer config file ```.../conf-loadbalancer/loadbalancer.conf```
     ```bash
@@ -112,7 +110,7 @@ $ docker run -it --rm \
     ```
 * go to your browser & type https://acme.de
 
-#### Load Balancer with Self-Signed Certificate
+### Load Balancer with Self-Signed Certificate
 
 * set ```ssl_self_signed=true``` in ```.../conf-loadbalancer/loadbalancer.conf```
 * mount the root-certificate, root-key & and a folder to persist the certificates
@@ -126,7 +124,7 @@ $ docker run -it --rm \
           projektmotor/apache-load-balancer:latest
     ```
 
-### Reverse Proxy Mode
+## Reverse Proxy Mode
 
 * run docker image
     ```bash
@@ -142,7 +140,7 @@ $ docker run -it --rm \
     ```
 * the script asks for all necessary informations and creates the new vhost for you 
 
-#### Reverse Proxy with Self-Signed Certificate
+### Reverse Proxy with Self-Signed Certificate
 
 * mount the root-certificate, root-key & and a folder to persist the certificates
     ```bash
@@ -162,14 +160,14 @@ $ docker run -it --rm \
     ...
     ```
 
-### Build-In Scripts
+## Build-In Scripts
 
 * reload apache config (```apache-reload.sh```)
     ```bash
     $ docker exec -it acme-load-balancer-container apache-reload.sh
   ```
 
-#### Loadbalancer Build-In Scripts
+### Loadbalancer Build-In Scripts
 
 * add new VHOST (```apache-init-cluster-vhost```)
     ```bash
@@ -195,7 +193,7 @@ $ docker run -it --rm \
     * **NOTICE**: apache config has to be reloaded
     
     
-#### Reverseproxy Build-In Scripts
+### Reverseproxy Build-In Scripts
 
 * add new VHOST (```apache-init-reverseproxy-vhost```)
     ```bash
