@@ -14,19 +14,19 @@ What else:
 
 ## Table of Content
 
-* [General Usage](#general-usage)
+1. [General Usage](#general-usage)
     * [Self-Signed Certificates with local CA Usage](#self-signed-certificateswwith-local-ca)
     * [Persistence](#persistence)
     * [Logging](#logging)
-* [Load Balancer Mode](#load-balancer-mode)
+2. [Load Balancer Mode](#load-balancer-mode)
     * [Load Balancer with Self-Signed Certificate](#load-balancer-with-self-signed-certificate)
-* [Reverse Proxy Mode](#reverse-proxy-mode)
+3. [Reverse Proxy Mode](#reverse-proxy-mode)
     * [Reverse Proxy with Self-Signed Certificate](#reverse-proxy-with-self-signed-certificate)
-* [Build-In Scripts](#build-in-scripts)
+4. [Build-In Scripts](#build-in-scripts)
     * [Loadbalancer Build-In Scripts](#loadbalancer-build-in-scripts)
     * [Reverseproxy Build-In Scripts](#reverseproxy-build-in-scripts)
 
-## General Usage
+## 1. General Usage
 
 ### Self-Signed Certificates with local CA
 
@@ -97,7 +97,7 @@ $ docker run -it --rm \
       projektmotor/apache-load-balancer:latest
 ```
 
-## Load Balancer Mode
+## 2. Load Balancer Mode
 
 * create a local load balancer config file ```.../conf-loadbalancer/loadbalancer.conf```
     ```bash
@@ -138,7 +138,7 @@ $ docker run -it --rm \
           projektmotor/apache-load-balancer:latest
     ```
 
-## Reverse Proxy Mode
+## 3. Reverse Proxy Mode
 
 * run docker image
     ```bash
@@ -174,7 +174,7 @@ $ docker run -it --rm \
     ...
     ```
 
-## Build-In Scripts
+## 4. Build-In Scripts
 
 * reload apache config (```apache-reload.sh```)
     ```bash
