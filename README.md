@@ -12,7 +12,7 @@ What else:
 
 * using as reverse-proxy / load balancer in a development env, including local https with local CA
 
-## General
+## General Usage
 
 ### Self-Signed Certificates with local CA
 
