@@ -14,52 +14,14 @@ What else:
 
 ## How to use
 
-### Getting started
+### General
 
-* create a local load balancer config file ```/path/loadbalancer.conf```
-    ```bash
-    [acme-app]                  # starts config part (name has no further meaning)
-    uri=acme.de                 # the url your app should be available under
-    cluster=acme-cluster        # name of load balancer cluster for acme-app
-    nodes=[web1:443,web2:443]              # comma separated list of worker nodes (HOST|IP:PORT)
-    node_ssl=true              # use ssl-connection for nodes
-    ```
-* build image
-    ```bash
-    $ docker build -t acme-load-balancer -v /path/loadbalancer/conf/:/etc/apache2/conf-loadbalancer .
-    ```
-* run the image
-    ```bash
-    $ docker run -it --rm --name acme-load-balancer-container acme-load-balancer
-    ```
-
-### Persistence
-
-* use a volume to achieve persistence of your apache config
-    * mount a single path (i.e. vhost path)
-        ```bash
-        $ docker build \
-              -t acme-load-balancer \
-              -v /path/loadbalancer/conf/:/etc/apache2/conf-loadbalancer \
-              -v /path/sites-available/:/etc/apache2/sites-available \
-              .
-        ```
-    * mount a whole apache-config path
-        ```bash
-        $ docker build \
-              -t acme-load-balancer \
-              -v /path/apache2/:/etc/apache2 \
-              .
-        ```
-
-### Self-Signed SSL with local CA
-
-#### Prepare Docker Host
+#### Self-Signed Certificates with local CA
 
 Certification warnings suck! To change this (for your self-signed certificate), 
 you should be your own local CA. All you need is a root-key (**myCA.key**) & 
-root-certificate (**myCA.pem**). These two things should be placed on your docker 
-host and mounted to any docker container which uses self-signed certificates. 
+root-certificate (**myCA.pem**). These two things should be placed on your **docker 
+host and mounted to any docker container which uses self-signed certificates**. 
 Additionally the root-certificate must be added as CA on all devices (browsers) 
 which execute requests against your ssl-host(s). 
 
@@ -88,34 +50,117 @@ Congrats, now you are your own CA! :] Stop... you are your own CA, but nobody kn
 To change this, you should add the earlier generated certificate as CA to your browser.
 
 * Chrome:
-    * Settings > Manage certificates > Authorities > IMPORT
-    * select you certificate file (myCA.pem)
-    * select signing targets (e.g. websites)
-    * double check the list of authorities if the certificate is imported as new authority
+ * Settings > Manage certificates > Authorities > IMPORT
+ * select you certificate file (myCA.pem)
+ * select signing targets (e.g. websites)
+ * double check the list of authorities if the certificate is imported as new authority
 
-#### Create VHost with certificate signed by the local CA
+#### Persistence
 
-What you should do now, differs from your use case.
+* mount a single path (i.e. vhost path)
+    ```bash
+    $ docker run -it --rm \
+          -v /path/loadbalancer/conf/:/etc/apache2/conf-loadbalancer \
+          -v /path/sites-available/:/etc/apache2/sites-available \
+          --name acme-load-balancer-container \
+          acme-load-balancer
+    ```
+* mount a whole apache-config path
+    ```bash
+    $ docker run -it --rm \
+          -v /path/apache2/:/etc/apache2 \
+          --name acme-load-balancer-container \
+          acme-load-balancer
+    ```
 
-##### Load Balancer which is configured by "loadbalancer.conf"
+#### Logging
 
-Dude, this one is a no-brainer. Just set the ssl-parameter in your ```loadbalancer.conf```
-from ```false``` to ```true```. If the VHost-file is already generated, remove it & restart
-the container. A fresh VHost-file is generated, including all the certification stuff. 
+In general it is a good idea to mount a host-folder to ```/var/log/apache2```. This makes your apache log-files persistent
+and log debugging from the outside of the docker container quite easy. 
 
 ```bash
-[acme-devel]
-uri=acme.devel
-ssl=true                            # ssl for your load balancer vhost
-cluster=acme-devel-cluster
-nodes=[web1:80;web2:80;web3:80]
-node_ssl=true                       # ssl for node-connections 
+$ docker run -it --rm \
+      -v .../logs/:/var/log/apache2 \
+      --name acme-load-balancer-container \
+      acme-load-balancer
 ```
 
-##### Revers Proxy which is created by the build-in script
+### Load Balancer Mode
 
-Using a self-signed certificate in reverse proxy env is not yet done. There are no 
-impediments, its just a matter of time ;]
+* create a local load balancer config file ```.../conf-loadbalancer/loadbalancer.conf```
+    ```bash
+    [acme-app]                            # starts config part (name has no further meaning)
+    cluster=acme-cluster                  # name of load balancer cluster for acme-app
+    uri=acme.de                           # the url your app should be available under
+    ssl=true                              # use SSL for incoming connections
+    ssl_self_signed=false                 # if true: use self signed certificate, if false: use letsencrypt
+    reverse_proxy_address=0.0.0.0         # if behind reverse proxy OR another load balancer, set its ip here (otherwise REMOTE_ADDR & client ip logging doesn't work)
+    nodes=[web1:443;web2:443;web3:443]    # comma separated list of worker nodes (HOST|IP:PORT)
+    node_ssl=true                         # use ssl-connection for nodes
+    ```
+* run docker image
+    ```bash
+    $ docker run -it --rm \
+          -v .../conf-loadbalancer/loadbalancer.conf/:/etc/apache2/conf-loadbalancer \
+          --name acme-load-balancer-container \
+          acme-load-balancer
+    ```
+* vhost & proxy config is auto-generated inside the container during startup
+    * **NOTICE**: if you change the ```loadbalancer.conf``` of a running container, you could regenerate the vhost- & proxy-config by running:
+    ```bash
+    $ apache-reload-cluster-conf.sh
+    ```
+* go to your browser & type https://acme.de
+
+#### Load Balancer with Self-Signed Certificate
+
+* set ```ssl_self_signed=true``` in ```.../conf-loadbalancer/loadbalancer.conf```
+* mount the root-certificate, root-key & and a folder to persist the certificates
+    ```bash
+    $ docker run -it --rm \
+          -v .../conf-loadbalancer/loadbalancer.conf/:/etc/apache2/conf-loadbalancer \
+          -v .../ssl_ca/:/etc/ssl_ca \
+          -v .../myCA.key:/etc/myCA.key \
+          -v .../myCA.pem:/etc/myCA.pem \
+          --name acme-load-balancer-container \
+          acme-load-balancer
+    ```
+
+### Reverse Proxy Mode
+
+* run docker image
+    ```bash
+    $ docker run -it --rm \
+          -v .../apache2/:/etc/apache2 \
+          -v .../letsencrypt/:/etc/letsencrypt \
+          --name acme-load-balancer-container \
+          acme-load-balancer
+    ```
+* add new vhost with build-in script: ```apache-init-reverseproxy-vhost.sh```
+    ```bash
+    $ docker exec -it acme-load-balancer-container apache-init-reverseproxy-vhost.sh
+    ```
+* the script asks for all necessary informations and creates the new vhost for you 
+
+#### Reverse Proxy with Self-Signed Certificate
+
+* mount the root-certificate, root-key & and a folder to persist the certificates
+    ```bash
+    $ docker run -it --rm \
+          -v .../apache2/:/etc/apache2 \
+          -v .../ssl_ca/:/etc/ssl_ca \
+          -v .../myCA.key:/etc/myCA.key \
+          -v .../myCA.pem:/etc/myCA.pem \
+          --name acme-load-balancer-container \
+          acme-load-balancer
+    ```
+* during execution of the build-in script ```apache-init-reverseproxy-vhost.sh``` type
+    ```bash
+    $ docker exec -it acme-load-balancer-container apache-init-reverseproxy-vhost.sh
+    ...
+    Use self-signed certificate for incoming connections - from browser (shortcut: s) [y|N]: Y
+    ...
+    ```
 
 ### Build-In Scripts
 
