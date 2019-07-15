@@ -101,15 +101,6 @@ if is_empty ${OUTGOING_SSL_ENABLED}; then
     OUTGOING_SSL_ENABLED="y"
 fi
 
-if is_truely ${OUTGOING_SSL_ENABLED}; then
-    if is_empty ${INCOMING_SSL_SELF_SIGNED}; then
-        read -p 'Use self-signed certificate for incoming connections - from browser (shortcut: s) [y|N]: ' INCOMING_SSL_SELF_SIGNED
-    fi
-    if is_empty ${INCOMING_SSL_ENABLED}; then
-        INCOMING_SSL_ENABLED="N"
-    fi
-fi
-
 if is_empty ${REVERSE_PROXY_ADDRESS}; then
     read -p 'Behind another Reverse-Proxy or Load-Balancer? IP/DNS (shortcut: p): ' REVERSE_PROXY_ADDRESS
 fi
