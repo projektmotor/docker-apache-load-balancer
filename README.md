@@ -63,14 +63,14 @@ To change this, you should add the earlier generated certificate as CA to your b
           -v /path/loadbalancer/conf/:/etc/apache2/conf-loadbalancer \
           -v /path/sites-available/:/etc/apache2/sites-available \
           --name acme-load-balancer-container \
-          acme-load-balancer
+          projektmotor/apache-load-balancer:latest
     ```
 * mount a whole apache-config path
     ```bash
     $ docker run -it --rm \
           -v /path/apache2/:/etc/apache2 \
           --name acme-load-balancer-container \
-          acme-load-balancer
+          projektmotor/apache-load-balancer:latest
     ```
 
 #### Logging
@@ -82,7 +82,7 @@ and log debugging from the outside of the docker container quite easy.
 $ docker run -it --rm \
       -v .../logs/:/var/log/apache2 \
       --name acme-load-balancer-container \
-      acme-load-balancer
+      projektmotor/apache-load-balancer:latest
 ```
 
 ### Load Balancer Mode
@@ -103,7 +103,7 @@ $ docker run -it --rm \
     $ docker run -it --rm \
           -v .../conf-loadbalancer/loadbalancer.conf/:/etc/apache2/conf-loadbalancer \
           --name acme-load-balancer-container \
-          acme-load-balancer
+          projektmotor/apache-load-balancer:latest
     ```
 * vhost & proxy config is auto-generated inside the container during startup
     * **NOTICE**: if you change the ```loadbalancer.conf``` of a running container, you could regenerate the vhost- & proxy-config by running:
@@ -123,7 +123,7 @@ $ docker run -it --rm \
           -v .../myCA.key:/etc/myCA.key \
           -v .../myCA.pem:/etc/myCA.pem \
           --name acme-load-balancer-container \
-          acme-load-balancer
+          projektmotor/apache-load-balancer:latest
     ```
 
 ### Reverse Proxy Mode
@@ -134,7 +134,7 @@ $ docker run -it --rm \
           -v .../apache2/:/etc/apache2 \
           -v .../letsencrypt/:/etc/letsencrypt \
           --name acme-load-balancer-container \
-          acme-load-balancer
+          projektmotor/apache-load-balancer:latest
     ```
 * add new vhost with build-in script: ```apache-init-reverseproxy-vhost.sh```
     ```bash
@@ -152,7 +152,7 @@ $ docker run -it --rm \
           -v .../myCA.key:/etc/myCA.key \
           -v .../myCA.pem:/etc/myCA.pem \
           --name acme-load-balancer-container \
-          acme-load-balancer
+          projektmotor/apache-load-balancer:latest
     ```
 * during execution of the build-in script ```apache-init-reverseproxy-vhost.sh``` type
     ```bash
