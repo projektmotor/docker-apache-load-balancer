@@ -29,12 +29,14 @@ APACHE_VHOST_PATH=/etc/apache2/sites-available/
 APACHE_VHOST_TEMPLATE_PATH=/etc/apache2/sites-template/
 APACHE_MAINTENANCE_PATH=/etc/apache2/maintenance-pages
 APACHE_MAINTENANCE_PATH_ESCAPED=\\/etc\\/apache2\\/maintenance-pages
+APACHE_TRUSTED_DOCKER_PROXIES=\\/etc\\/apache2\\/conf-available\\/trusted-docker-proxies.conf
 CERTBOT_BIN=/usr/bin/certbot
 INCOMING_SSL_ENABLED=""
 OUTGOING_SSL_ENABLED=""
 SERVER_ALIAS=""
 REVERSE_PROXY_ADDRESS=""
 INCOMING_SSL_SELF_SIGNED=""
+INCLUDE_TRUSTED_DOCKER_PROXIES=""
 
 while getopts d:i:p:a:m:s:l:p: option
 do
@@ -49,6 +51,7 @@ s) INCOMING_SSL_ENABLED=${OPTARG};;
 l) OUTGOING_SSL_ENABLED=${OPTARG};;
 o) OUTGOING_SSL_PORT=${OPTARG};;
 p) REVERSE_PROXY_ADDRESS=${OPTARG};;
+q) INCLUDE_TRUSTED_DOCKER_PROXIES=${OPTARG};;
 esac
 done
 
@@ -105,6 +108,15 @@ if is_empty ${REVERSE_PROXY_ADDRESS}; then
     read -p 'Behind another Reverse-Proxy or Load-Balancer? IP/DNS (shortcut: p): ' REVERSE_PROXY_ADDRESS
 fi
 
+if ! is_empty ${REVERSE_PROXY_ADDRESS}; then
+    if is_empty ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
+        read -p 'Include Docker networks as trusted proxies - needed in most environments to make RemoteIP work (shortcut: q) [Y|n]: ' INCLUDE_TRUSTED_DOCKER_PROXIES
+    fi
+    if is_empty ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
+        INCLUDE_TRUSTED_DOCKER_PROXIES="Y"
+    fi
+fi
+
 echo ""
 echo "One-liner to rerun this script:"
 echo "apache-init-reverseproxy-vhost.sh \
@@ -115,7 +127,8 @@ echo "apache-init-reverseproxy-vhost.sh \
 -m ${WITH_MAINTENANCE} \
 -s ${INCOMING_SSL_ENABLED} \
 -l ${OUTGOING_SSL_ENABLED} \
--p ${REVERSE_PROXY_ADDRESS}"
+-p ${REVERSE_PROXY_ADDRESS} \
+-q ${INCLUDE_TRUSTED_DOCKER_PROXIES} "
 echo ""
 
 VHOST_CERTBOT_FILENAME="${SERVER_NAME}_certbot.conf"
@@ -328,8 +341,12 @@ if ! is_empty ${REVERSE_PROXY_ADDRESS}; then
     INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
     INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
 
+    if is_truely ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
+        INSERTION+="\n    RemoteIPInternalProxyList ${APACHE_TRUSTED_DOCKER_PROXIES}"
+    fi
+
     # update http config
-    sed -i -E "s/(RequestHeader setifempty X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+    sed -i -E "s/(RequestHeader set X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
     sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
 
     # update https config (if incoming ssl enabled)

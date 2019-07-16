@@ -9,6 +9,7 @@ rsync -qlru /tmp/letsencrypt/ /etc/letsencrypt/
 chown -R root:root /etc/apache2 /etc/letsencrypt
 
 apache-reload-cluster-conf.sh
+apache-remoteip-init-docker-networks.sh
 
 htpasswd -bc /var/.htpasswd ${BALANCER_MANAGER_USER} ${BALANCER_MANAGER_PASS}
 

@@ -9,6 +9,7 @@ INCOMING_SSL_SELF_SIGNED=""
 NODES_CONF=""
 OUTGOING_SSL=""
 PROXY_ADDRESS=""
+INCLUDE_TRUSTED_DOCKER_PROXIES=""
 
 addNode()
 {
@@ -19,7 +20,14 @@ addNode()
 init()
 {
     apache-init-cluster.sh ${CLUSTER_NAME}
-    apache-init-cluster-vhost.sh ${VHOST_URI} ${CLUSTER_NAME} ${INCOMING_SSL} ${INCOMING_SSL_SELF_SIGNED} ${OUTGOING_SSL} ${PROXY_ADDRESS}
+    apache-init-cluster-vhost.sh \
+        ${VHOST_URI} \
+        ${CLUSTER_NAME} \
+        ${INCOMING_SSL} \
+        ${INCOMING_SSL_SELF_SIGNED} \
+        ${OUTGOING_SSL} \
+        ${PROXY_ADDRESS} \
+        ${INCLUDE_TRUSTED_DOCKER_PROXIES}
 
     NODES_CONF="${NODES_CONF/\[/}"
     NODES_CONF="${NODES_CONF/\]/}"
@@ -52,6 +60,7 @@ do
         NODES_CONF=""
         OUTGOING_SSL=""
         PROXY_ADDRESS=""
+        INCLUDE_TRUSTED_DOCKER_PROXIES=""
         continue
     fi
 
@@ -92,6 +101,10 @@ do
 
     if [ "${LINE_DATA[0]}" == "reverse_proxy_address" ]; then
         PROXY_ADDRESS=${LINE_DATA[1]}
+    fi
+
+    if [ "${LINE_DATA[0]}" == "include_trusted_docker_proxies" ]; then
+        INCLUDE_TRUSTED_DOCKER_PROXIES=${LINE_DATA[1]}
     fi
 
 done < ${APACHE_LOADBALANCER_CONF}

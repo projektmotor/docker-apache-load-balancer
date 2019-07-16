@@ -20,9 +20,11 @@ INCOMING_SSL=$3
 INCOMING_SSL_SELF_SIGNED=$4
 OUTGOING_SSL=$5
 REVERSE_PROXY_ADDRESS=$6
+INCLUDE_TRUSTED_DOCKER_PROXIES=$7
 VHOST_NAME=${SERVER_NAME/\./-}
 VHOST_FILENAME="$VHOST_NAME.conf"
 VHOST_CERTBOT_FILENAME="${VHOST_NAME}_certbot.conf"
+APACHE_TRUSTED_DOCKER_PROXIES=\\/etc\\/apache2\\/conf-available\\/trusted-docker-proxies.conf
 
 if [ -z "${SERVER_NAME}" ] || [ -z "${CLUSTER_NAME}" ]; then
     usage
@@ -163,8 +165,12 @@ if [ -n "${REVERSE_PROXY_ADDRESS}" ]; then
     INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
     INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
 
+    if [ -n ${INCLUDE_TRUSTED_DOCKER_PROXIES} ] && [ "${INCLUDE_TRUSTED_DOCKER_PROXIES}" == "true" ]; then
+        INSERTION+="\n    RemoteIPInternalProxyList ${APACHE_TRUSTED_DOCKER_PROXIES}"
+    fi
+
     # update http config
-    sed -i -E "s/(RequestHeader setifempty X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+    sed -i -E "s/(RequestHeader set X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
     sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
 fi
 

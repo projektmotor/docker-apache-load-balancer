@@ -3,7 +3,7 @@
     ServerAlias [SERVER_ALIAS]
     ServerAdmin admin@[SERVER_NAME]
 
-    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+    RequestHeader set X-Real-Client-IP expr=%{REMOTE_ADDR}
 
     Redirect / https://[SERVER_NAME]/
 

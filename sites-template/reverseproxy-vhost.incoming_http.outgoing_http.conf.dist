@@ -1,7 +1,7 @@
 <VirtualHost *:80>
     ServerName [SERVER_NAME]
 
-    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+    RequestHeader set X-Real-Client-IP expr=%{REMOTE_ADDR}
 
     ProxyRequests     off
     ProxyPreserveHost on

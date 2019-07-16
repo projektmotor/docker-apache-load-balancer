@@ -4,7 +4,7 @@
     DocumentRoot /var/www/html
     ProxyRequests Off
 
-    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+    RequestHeader set X-Real-Client-IP expr=%{REMOTE_ADDR}
 
     # loadbalancing für web-root aktivieren
     ProxyPass / balancer://[VHOST-CLUSTER-NAME]/ nofailover=On
@@ -21,7 +21,7 @@
     DocumentRoot /var/www/html
     ProxyRequests Off
 
-    RequestHeader setifempty X-Real-Client-IP expr=%{REMOTE_ADDR}
+    RequestHeader set X-Real-Client-IP expr=%{REMOTE_ADDR}
 
     # loadbalancing für web-root aktivieren
     ProxyPass / balancer://[VHOST-CLUSTER-NAME]/ nofailover=On
