@@ -104,16 +104,16 @@ if is_empty ${OUTGOING_SSL_ENABLED}; then
     OUTGOING_SSL_ENABLED="y"
 fi
 
-if is_empty ${REVERSE_PROXY_ADDRESS}; then
-    read -p 'Behind another Reverse-Proxy or Load-Balancer? IP/DNS (shortcut: p): ' REVERSE_PROXY_ADDRESS
+if is_empty ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
+    read -p 'Include Docker networks as trusted proxies - needed if behind another reverse proxy / load balancer to make RemoteIP work (shortcut: q) [y|N]: ' INCLUDE_TRUSTED_DOCKER_PROXIES
+fi
+if is_empty ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
+    INCLUDE_TRUSTED_DOCKER_PROXIES="N"
 fi
 
-if ! is_empty ${REVERSE_PROXY_ADDRESS}; then
-    if is_empty ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
-        read -p 'Include Docker networks as trusted proxies - needed in most environments to make RemoteIP work (shortcut: q) [Y|n]: ' INCLUDE_TRUSTED_DOCKER_PROXIES
-    fi
-    if is_empty ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
-        INCLUDE_TRUSTED_DOCKER_PROXIES="Y"
+if is_falsly ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
+    if is_empty ${REVERSE_PROXY_ADDRESS}; then
+        read -p 'Reverse-Proxy or Load-Balancer IP/DNS - needed if behind another reverse proxy / load balancer which is not reachable over docker interfaces (shortcut: p): ' REVERSE_PROXY_ADDRESS
     fi
 fi
 
@@ -337,12 +337,12 @@ else
 fi
 
 # add extra config if behind another reverse proxy / load balancer
-if ! is_empty ${REVERSE_PROXY_ADDRESS}; then
+if is_truely ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
     INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
-    INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
+    INSERTION+="\n    RemoteIPInternalProxyList ${APACHE_TRUSTED_DOCKER_PROXIES}"
 
-    if is_truely ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
-        INSERTION+="\n    RemoteIPInternalProxyList ${APACHE_TRUSTED_DOCKER_PROXIES}"
+    if ! is_empty ${REVERSE_PROXY_ADDRESS}; then
+        INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
     fi
 
     # update http config
@@ -365,7 +365,30 @@ if ! is_empty ${REVERSE_PROXY_ADDRESS}; then
             sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_MAINTENANCE_FILENAME}
         fi
     fi
+elif is_truely ${REVERSE_PROXY_ADDRESS}; then
+    INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
+    INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
 
+    # update http config
+    sed -i -E "s/(RequestHeader set X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+    sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+
+    # update https config (if incoming ssl enabled)
+    if is_truely ${INCOMING_SSL_ENABLED}; then
+        sed -i -E "s/(RequestHeader setifempty X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
+        sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
+    fi
+
+    # update maintainence config
+    if is_truely ${WITH_MAINTENANCE}; then
+        if is_truely ${INCOMING_SSL_ENABLED}; then
+            sed -i -E "s/(DocumentRoot.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}
+            sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_SSL_MAINTENANCE_FILENAME}
+        else
+            sed -i -E "s/(DocumentRoot.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_MAINTENANCE_FILENAME}
+            sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_MAINTENANCE_FILENAME}
+        fi
+    fi
 fi
 
 a2ensite ${VHOST_FILENAME} > /dev/null 2>&1

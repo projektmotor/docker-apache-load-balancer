@@ -161,13 +161,16 @@ else
     sed -i "s/\(ServerAlias\s*\)\(.*\)/\1$SERVER_ALIAS /" $APACHE_VHOST_PATH/$VHOST_FILENAME
 fi
 
-if [ -n "${REVERSE_PROXY_ADDRESS}" ]; then
+if [ -n "${INCLUDE_TRUSTED_DOCKER_PROXIES}" ]; then
+    INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
+    INSERTION+="\n    RemoteIPInternalProxyList ${APACHE_TRUSTED_DOCKER_PROXIES}"
+
+    # update http config
+    sed -i -E "s/(RequestHeader set X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+    sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
+elif [ -n "${REVERSE_PROXY_ADDRESS}" ]; then
     INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
     INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
-
-    if [ -n ${INCLUDE_TRUSTED_DOCKER_PROXIES} ] && [ "${INCLUDE_TRUSTED_DOCKER_PROXIES}" == "true" ]; then
-        INSERTION+="\n    RemoteIPInternalProxyList ${APACHE_TRUSTED_DOCKER_PROXIES}"
-    fi
 
     # update http config
     sed -i -E "s/(RequestHeader set X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
