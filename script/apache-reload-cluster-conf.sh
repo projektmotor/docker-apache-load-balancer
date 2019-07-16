@@ -26,8 +26,8 @@ init()
         ${INCOMING_SSL} \
         ${INCOMING_SSL_SELF_SIGNED} \
         ${OUTGOING_SSL} \
-        ${PROXY_ADDRESS} \
-        ${INCLUDE_TRUSTED_DOCKER_PROXIES}
+        ${INCLUDE_TRUSTED_DOCKER_PROXIES} \
+        ${PROXY_ADDRESS}
 
     NODES_CONF="${NODES_CONF/\[/}"
     NODES_CONF="${NODES_CONF/\]/}"
