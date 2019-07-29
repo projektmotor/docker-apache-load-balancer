@@ -30,7 +30,8 @@ RUN echo 'AuthType Basic'                   > /var/www/html/balancer-manager/.ht
     echo 'require valid-user'               >> /var/www/html/balancer-manager/.htaccess && \
     echo '</limit>'                         >> /var/www/html/balancer-manager/.htaccess
 
-RUN rm -rf /etc/apache2/sites-available/*
+RUN rm -rf /etc/apache2/sites-available/* && \
+    mkdir -p /tmp/crontab
 
 COPY sites-available/* /etc/apache2/sites-available/
 COPY sites-template/* /etc/apache2/sites-template/
@@ -38,6 +39,10 @@ COPY conf-available/* /etc/apache2/conf-available/
 COPY conf-loadbalancer /etc/apache2/conf-loadbalancer/
 COPY script/* /usr/local/bin/
 COPY maintenance-pages/* /etc/apache2/maintenance-pages/
+COPY cron/* /tmp/crontab/
+
+RUN mkdir -p /var/log/letsencrypt && \
+    crontab /tmp/crontab/letsencrypt
 
 RUN rm -f /etc/apache2/conf-available/proxy.conf && \
     cp /etc/apache2/conf-available/proxy.conf.dist /etc/apache2/conf-available/proxy.conf
@@ -50,6 +55,8 @@ RUN cp -r /etc/apache2 /tmp/apache2 && \
 
 ENV TIME_ZONE=Europe/Berlin
 RUN ln -snf /usr/share/zoneinfo/${TIME_ZONE} /etc/localtime && echo ${TIME_ZONE} > /etc/timezone
+
+
 
 COPY docker-entrypoint.sh /usr/local/bin/
 

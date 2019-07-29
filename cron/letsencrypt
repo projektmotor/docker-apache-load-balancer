@@ -1,0 +1,1 @@
+0 4 * * * /usr/bin/certbot renew --apache >> /var/log/letsencrypt/cron.renew.log  2>&1

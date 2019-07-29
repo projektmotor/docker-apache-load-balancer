@@ -1,5 +1,7 @@
 #!/bin/bash
 
+/etc/init.d/cron restart
+
 BALANCER_MANAGER_USER=${BALANCER_MANAGER_USER:-'root'}
 BALANCER_MANAGER_PASS=${BALANCER_MANAGER_PASS:-'root'}
 
