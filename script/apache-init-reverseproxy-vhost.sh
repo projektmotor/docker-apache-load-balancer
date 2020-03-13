@@ -38,7 +38,7 @@ REVERSE_PROXY_ADDRESS=""
 INCOMING_SSL_SELF_SIGNED=""
 INCLUDE_TRUSTED_DOCKER_PROXIES=""
 
-while getopts d:i:p:a:m:s:l:p: option
+while getopts d:i:p:a:m:s:e:l:r:q: option
 do
 case "${option}"
 in
@@ -48,9 +48,9 @@ p) TARGET_PORT=${OPTARG};;
 a) SERVER_ALIAS=${OPTARG};;
 m) WITH_MAINTENANCE=${OPTARG};;
 s) INCOMING_SSL_ENABLED=${OPTARG};;
+e) INCOMING_SSL_SELF_SIGNED=${OPTARG};;
 l) OUTGOING_SSL_ENABLED=${OPTARG};;
-o) OUTGOING_SSL_PORT=${OPTARG};;
-p) REVERSE_PROXY_ADDRESS=${OPTARG};;
+r) REVERSE_PROXY_ADDRESS=${OPTARG};;
 q) INCLUDE_TRUSTED_DOCKER_PROXIES=${OPTARG};;
 esac
 done
@@ -90,7 +90,7 @@ fi
 
 if is_truely ${INCOMING_SSL_ENABLED}; then
     if is_empty ${INCOMING_SSL_SELF_SIGNED}; then
-        read -p 'Use self-signed certificate for incoming connections - from browser (shortcut: s) [y|N]: ' INCOMING_SSL_SELF_SIGNED
+        read -p 'Use self-signed certificate for incoming connections - from browser (only used when SSL for incoming connections is enabled; when N is used then certbot certificate is generated; shortcut: e) [y|N]: ' INCOMING_SSL_SELF_SIGNED
     fi
     if is_empty ${INCOMING_SSL_ENABLED}; then
         INCOMING_SSL_ENABLED="N"
@@ -112,8 +112,8 @@ if is_empty ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
 fi
 
 if is_falsly ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
-    if is_empty ${REVERSE_PROXY_ADDRESS}; then
-        read -p 'Reverse-Proxy or Load-Balancer IP/DNS - needed if behind another reverse proxy / load balancer which is not reachable over docker interfaces (shortcut: p): ' REVERSE_PROXY_ADDRESS
+    if is_empty ${REVERSE_PROXY_ADDRESS} || is_falsly ${REVERSE_PROXY_ADDRESS}; then
+        read -p 'Reverse-Proxy or Load-Balancer IP/DNS - needed if behind another reverse proxy / load balancer which is not reachable over docker interfaces (shortcut: r): ' REVERSE_PROXY_ADDRESS
     fi
 fi
 
@@ -126,8 +126,9 @@ echo "apache-init-reverseproxy-vhost.sh \
 -a ${SERVER_ALIAS} \
 -m ${WITH_MAINTENANCE} \
 -s ${INCOMING_SSL_ENABLED} \
+-e ${INCOMING_SSL_SELF_SIGNED} \
 -l ${OUTGOING_SSL_ENABLED} \
--p ${REVERSE_PROXY_ADDRESS} \
+-r ${REVERSE_PROXY_ADDRESS} \
 -q ${INCLUDE_TRUSTED_DOCKER_PROXIES} "
 echo ""
 
@@ -295,7 +296,7 @@ fi
 # PERSONALIZE HTTP-VHOST
 sed -i "s/\[SERVER_NAME]/${SERVER_NAME}/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
 
-if [ -z "${SERVER_ALIAS}" ]; then
+if is_falsly ${SERVER_ALIAS}; then
     sed -i '/ServerAlias/d' ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
 else
     sed -i "s/\[SERVER_ALIAS]/$SERVER_ALIAS/" ${APACHE_VHOST_PATH}/${VHOST_FILENAME}
@@ -341,7 +342,7 @@ if is_truely ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
     INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
     INSERTION+="\n    RemoteIPInternalProxyList ${APACHE_TRUSTED_DOCKER_PROXIES}"
 
-    if ! is_empty ${REVERSE_PROXY_ADDRESS}; then
+    if ! is_empty ${REVERSE_PROXY_ADDRESS} && ! is_falsly ${REVERSE_PROXY_ADDRESS}; then
         INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
     fi
 
@@ -365,7 +366,7 @@ if is_truely ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
             sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_MAINTENANCE_FILENAME}
         fi
     fi
-elif is_truely ${REVERSE_PROXY_ADDRESS}; then
+elif ! is_falsly ${REVERSE_PROXY_ADDRESS} && ! is_empty ${REVERSE_PROXY_ADDRESS}; then
     INSERTION="\n    RemoteIPHeader X-Real-Client-IP"
     INSERTION+="\n    RemoteIPInternalProxy ${REVERSE_PROXY_ADDRESS}"
 
