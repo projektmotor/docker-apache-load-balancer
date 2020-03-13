@@ -37,8 +37,9 @@ SERVER_ALIAS=""
 REVERSE_PROXY_ADDRESS=""
 INCOMING_SSL_SELF_SIGNED=""
 INCLUDE_TRUSTED_DOCKER_PROXIES=""
+REWRITE_WEBSOCKET_REQUESTS=""
 
-while getopts d:i:p:a:m:s:e:l:r:q: option
+while getopts d:i:p:a:m:s:e:l:r:q:w: option
 do
 case "${option}"
 in
@@ -52,6 +53,7 @@ e) INCOMING_SSL_SELF_SIGNED=${OPTARG};;
 l) OUTGOING_SSL_ENABLED=${OPTARG};;
 r) REVERSE_PROXY_ADDRESS=${OPTARG};;
 q) INCLUDE_TRUSTED_DOCKER_PROXIES=${OPTARG};;
+w) REWRITE_WEBSOCKET_REQUESTS=${OPTARG};;
 esac
 done
 
@@ -117,6 +119,14 @@ if is_falsly ${INCLUDE_TRUSTED_DOCKER_PROXIES}; then
     fi
 fi
 
+
+if is_empty ${REWRITE_WEBSOCKET_REQUESTS}; then
+    read -p 'Rewrite websocket requests - needed for e.g. webpack dev server (shortcut: w) [y|N]: ' REWRITE_WEBSOCKET_REQUESTS
+fi
+if is_empty ${REWRITE_WEBSOCKET_REQUESTS}; then
+    REWRITE_WEBSOCKET_REQUESTS="N"
+fi
+
 echo ""
 echo "One-liner to rerun this script:"
 echo "apache-init-reverseproxy-vhost.sh \
@@ -129,6 +139,7 @@ echo "apache-init-reverseproxy-vhost.sh \
 -e ${INCOMING_SSL_SELF_SIGNED} \
 -l ${OUTGOING_SSL_ENABLED} \
 -r ${REVERSE_PROXY_ADDRESS} \
+-w ${REWRITE_WEBSOCKET_REQUESTS} \
 -q ${INCLUDE_TRUSTED_DOCKER_PROXIES} "
 echo ""
 
@@ -390,6 +401,18 @@ elif ! is_falsly ${REVERSE_PROXY_ADDRESS} && ! is_empty ${REVERSE_PROXY_ADDRESS}
             sed -i -E 's/(LogFormat.*)%h(.*)/\1%a\2/' ${APACHE_VHOST_PATH}/${VHOST_MAINTENANCE_FILENAME}
         fi
     fi
+fi
+
+
+# add extra config if using websockets
+if is_truely ${REWRITE_WEBSOCKET_REQUESTS}; then
+    INSERTION="\n\n    # Rewrite websocket requests"
+    INSERTION+="\n    RewriteEngine on"
+    INSERTION+="\n    RewriteCond %{HTTP:Upgrade} websocket [NC]"
+    INSERTION+="\n    RewriteCond %{HTTP:Connection} upgrade [NC]"
+    INSERTION+="\n    RewriteRule .* \"wss:\/\/${TARGET_IP}:${TARGET_PORT}%{REQUEST_URI}\" [P]"
+
+    sed -i -E "s/(RequestHeader set X-Real-Client-IP.*)/\1${INSERTION}/" ${APACHE_VHOST_PATH}/${VHOST_SSL_FILENAME}
 fi
 
 a2ensite ${VHOST_FILENAME} > /dev/null 2>&1
