@@ -256,7 +256,7 @@ $ docker run -it --rm \
     export DOCKERHOST=$(ifconfig | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | grep -v 127.0.0.1 | awk '{ print $2 }' | cut -f2 -d: | head -n1)
     docker-compose -f docker-compose.yml up -d
     ```
-This one ensures that the env var ```DOCKERHOST``` always got your host ip which you can use in your reverse proxy vhost config.
+    This one ensures that the env var ```DOCKERHOST``` always got your host ip which you can use in your reverse proxy vhost config.
 * add vhosts to your local reverse proxy:
     * add in /etc/hosts
         ```
