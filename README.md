@@ -25,6 +25,8 @@ What else:
 4. [Build-In Scripts](#build-in-scripts)
     * [Loadbalancer Build-In Scripts](#loadbalancer-build-in-scripts)
     * [Reverseproxy Build-In Scripts](#reverseproxy-build-in-scripts)
+5. [Examples with docker-compose](#examples-with-docker-compose)
+    * [Run with docker-compose as a local dev-server](#run-with-docker-compose-as-a-local-dev-server)
 
 ## 1. General Usage
 
@@ -167,10 +169,10 @@ $ docker run -it --rm \
           projektmotor/apache-load-balancer:latest
     ```
 * during execution of the build-in script ```apache-init-reverseproxy-vhost.sh``` type
-    ```bash
+    ```
     $ docker exec -it acme-load-balancer-container apache-init-reverseproxy-vhost.sh
     ...
-    Use self-signed certificate for incoming connections - from browser (shortcut: s) [y|N]: Y
+    'Use self-signed certificate for incoming connections - from browser (only used when SSL for incoming connections is enabled; when N is used then certbot certificate is generated; shortcut: e) [y|N]: Y
     ...
     ```
 
@@ -222,3 +224,63 @@ $ docker run -it --rm \
           ```
     * optional: including SSL certificate creation
     * optional: use maintenance page
+
+## 5. Examples with docker-compose
+
+* Run with docker-compose as a local dev-server
+    * create config file ```/var/apps/reverse-proxy/docker-compose.yml``` 
+    ```
+    version: "3"
+    services:
+    
+      loadbalancer:
+        image: projektmotor/apache-load-balancer
+        ports:
+          - 80:80
+          - 443:443
+        volumes:
+          - /var/apps/reverse-proxy/apache2/:/etc/apache2
+          - /var/apps/reverse-proxy/letsencrypt/:/etc/letsencrypt
+          - /var/apps/reverse-proxy/ssl_ca/:/etc/ssl_ca
+          - /var/apps/reverse-proxy/myCA.key:/etc/myCA.key
+          - /var/apps/reverse-proxy/myCA.pem:/etc/myCA.pem
+        restart: always
+        extra_hosts:
+          - "dockerhost:$DOCKERHOST"
+    ```
+    * create an executable file ```/var/apps/reverse-proxy/docker-start.sh``` as start script
+    ```
+    #!/bin/sh
+    set -e
+    
+    export DOCKERHOST=$(ifconfig | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | grep -v 127.0.0.1 | awk '{ print $2 }' | cut -f2 -d: | head -n1)
+    docker-compose -f docker-compose.yml up -d
+    ```
+    This one ensures that the env var ```DOCKERHOST``` always got your host ip which you can use in your reverse proxy vhost config.
+    * add vhosts to your local reverse proxy:
+        * add in /etc/hosts
+            ```
+            127.0.0.1	acme
+            127.0.0.1	acme-webpack
+            127.0.0.1	acme-storybook
+            ```
+        * simple https secured project
+            ```bash
+            $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9700 -a n -m n -s y -e y -l y -r n -w n -q y
+            ```
+        * webpack-dev-server with https
+            ```bash
+            $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9704 -a n -m n -s y -e y -l y -r n -w y -q y
+            ```
+        * storybook with https
+            ```bash
+            $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9705 -a n -m n -s y -e y -l n -r n -q y -w n
+            ```
+    * Now you can start storybook and webpack-dev-server in your development container:  
+        ```
+        $ yarn start-storybook --config-dir storybook/ --port 9705
+        ```   
+        ```
+        $ yarn encore dev-server --https --host 0.0.0.0 --port 9704 --disable-host-check  --public acme-webpack
+        ```
+        Ensure that ports 9700, 9704 and 9705 a forwarded in your development container. 
