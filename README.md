@@ -14,18 +14,18 @@ What else:
 
 ## Table of Content
 
-1. [General Usage](#general-usage)
+1. [General Usage](#1-general-usage)
     * [Self-Signed Certificates with local CA Usage](#self-signed-certificateswwith-local-ca)
     * [Persistence](#persistence)
     * [Logging](#logging)
-2. [Load Balancer Mode](#load-balancer-mode)
+2. [Load Balancer Mode](#2-load-balancer-mode)
     * [Load Balancer with Self-Signed Certificate](#load-balancer-with-self-signed-certificate)
-3. [Reverse Proxy Mode](#reverse-proxy-mode)
+3. [Reverse Proxy Mode](#3-reverse-proxy-mode)
     * [Reverse Proxy with Self-Signed Certificate](#reverse-proxy-with-self-signed-certificate)
-4. [Build-In Scripts](#build-in-scripts)
+4. [Build-In Scripts](#4-build-in-scripts)
     * [Loadbalancer Build-In Scripts](#loadbalancer-build-in-scripts)
     * [Reverseproxy Build-In Scripts](#reverseproxy-build-in-scripts)
-5. [Examples with docker-compose](#examples-with-docker-compose)
+5. [Examples with docker-compose](#5-examples-with-docker-compose)
     * [Run with docker-compose as a local dev-server](#run-with-docker-compose-as-a-local-dev-server)
 
 ## 1. General Usage
@@ -227,8 +227,8 @@ $ docker run -it --rm \
 
 ## 5. Examples with docker-compose
 
-* Run with docker-compose as a local dev-server
-    * create config file ```/var/apps/reverse-proxy/docker-compose.yml``` 
+### Run with docker-compose as a local dev-server
+* create config file ```/var/apps/reverse-proxy/docker-compose.yml``` 
     ```
     version: "3"
     services:
@@ -248,39 +248,39 @@ $ docker run -it --rm \
         extra_hosts:
           - "dockerhost:$DOCKERHOST"
     ```
-    * create an executable file ```/var/apps/reverse-proxy/docker-start.sh``` as start script
-    ```
+* create an executable file ```/var/apps/reverse-proxy/docker-start.sh``` as start script
+    ```bash
     #!/bin/sh
     set -e
     
     export DOCKERHOST=$(ifconfig | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | grep -v 127.0.0.1 | awk '{ print $2 }' | cut -f2 -d: | head -n1)
     docker-compose -f docker-compose.yml up -d
     ```
-    This one ensures that the env var ```DOCKERHOST``` always got your host ip which you can use in your reverse proxy vhost config.
-    * add vhosts to your local reverse proxy:
-        * add in /etc/hosts
-            ```
-            127.0.0.1	acme
-            127.0.0.1	acme-webpack
-            127.0.0.1	acme-storybook
-            ```
-        * simple https secured project
-            ```bash
-            $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9700 -a n -m n -s y -e y -l y -r n -w n -q y
-            ```
-        * webpack-dev-server with https
-            ```bash
-            $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9704 -a n -m n -s y -e y -l y -r n -w y -q y
-            ```
-        * storybook with https
-            ```bash
-            $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9705 -a n -m n -s y -e y -l n -r n -q y -w n
-            ```
-    * Now you can start storybook and webpack-dev-server in your development container:  
+This one ensures that the env var ```DOCKERHOST``` always got your host ip which you can use in your reverse proxy vhost config.
+* add vhosts to your local reverse proxy:
+    * add in /etc/hosts
         ```
-        $ yarn start-storybook --config-dir storybook/ --port 9705
-        ```   
+        127.0.0.1	acme
+        127.0.0.1	acme-webpack
+        127.0.0.1	acme-storybook
         ```
-        $ yarn encore dev-server --https --host 0.0.0.0 --port 9704 --disable-host-check  --public acme-webpack
+    * simple https secured project
+        ```bash
+        $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9700 -a n -m n -s y -e y -l y -r n -w n -q y
         ```
-        Ensure that ports 9700, 9704 and 9705 a forwarded in your development container. 
+    * webpack-dev-server with https
+        ```bash
+        $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9704 -a n -m n -s y -e y -l y -r n -w y -q y
+        ```
+    * storybook with https
+        ```bash
+        $ docker-compose exec loadbalancer apache-init-reverseproxy-vhost.sh -d acme -i dockerhost -p 9705 -a n -m n -s y -e y -l n -r n -q y -w n
+        ```
+* Now you can start storybook and webpack-dev-server in your development container:  
+    ```
+    $ yarn start-storybook --config-dir storybook/ --port 9705
+    ```   
+    ```
+    $ yarn encore dev-server --https --host 0.0.0.0 --port 9704 --disable-host-check  --public acme-webpack
+    ```
+    Ensure that ports 9700, 9704 and 9705 a forwarded in your development container. 
