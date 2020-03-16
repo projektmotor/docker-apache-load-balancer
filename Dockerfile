@@ -47,7 +47,7 @@ RUN mkdir -p /var/log/letsencrypt && \
 RUN rm -f /etc/apache2/conf-available/proxy.conf && \
     cp /etc/apache2/conf-available/proxy.conf.dist /etc/apache2/conf-available/proxy.conf
 
-RUN a2enmod proxy proxy_balancer proxy_http status lbmethod_byrequests rewrite headers remoteip ssl && \
+RUN a2enmod proxy proxy_balancer proxy_http proxy_wstunnel status lbmethod_byrequests rewrite headers remoteip ssl && \
     a2enconf proxy proxy-balancer-manager
 
 RUN cp -r /etc/apache2 /tmp/apache2 && \
